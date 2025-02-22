@@ -5,7 +5,7 @@ from sqlalchemy.orm import validates
 db = SQLAlchemy()
 
 class User(db.Model):
-    __tablename__ = 'user'
+    __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -19,8 +19,9 @@ class User(db.Model):
     def to_dict(self):
         return {"id": self.id, "name": self.name}
 
+
 class Book(db.Model):
-    __tablename__ = 'book'
+    __tablename__ = 'books'
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -37,6 +38,7 @@ class Book(db.Model):
     def to_dict(self):
         return {"id": self.id, "title": self.title, "author": self.author}
     
+
 class Order(db.Model):
     __tablename__ = 'orders'
 
@@ -52,9 +54,10 @@ class Order(db.Model):
     def to_dict(self):
         return {"id": self.id, "user_id": self.user_id, "book_id": self.book_id}
     
+
 class Wishlist(db.Model):
     __tablename__ = 'wishlist'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
@@ -62,7 +65,10 @@ class Wishlist(db.Model):
     def to_dict(self):
         return {"id": self.id, "user_id": self.user_id, "book_id": self.book_id}
 
+
 class OrderItem(db.model):
+    __tablename__ = 'order_items'
+
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
@@ -72,10 +78,12 @@ class OrderItem(db.model):
     def to_dict(self):
         return {"id": self.id, "order_id": self.order_id, "book_id": self.book_id, "quantity": self.quantity, "price": self.price}
 
+
 class Payment(db.model):
+    __tablename__ = 'payments'
+
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
     payment_method = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(100), nullable=False)
-
