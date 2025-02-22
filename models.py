@@ -4,7 +4,7 @@ from sqlalchemy.orm import validates
 
 db = SQLAlchemy()
 
-class User(db.Model):
+class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -16,8 +16,14 @@ class User(db.Model):
     orders = db.relationship('Order', backref='user', lazy=True)
     wishlist = db.relationship('Wishlist', backref='user', lazy=True)
 
-    def to_dict(self):
-        return {"id": self.id, "name": self.name}
+    @validates('email')
+    def validate_email(self, key, email):
+        if '@' not in email:
+            raise ValueError('Invalid email format')
+        return email
+
+    def __repr__(self):
+        return f'<User {self.username}>, {self.email}>'
 
 
 class Book(db.Model):
@@ -35,9 +41,9 @@ class Book(db.Model):
     order_items = db.relationship('OrderItem', backref='book', lazy=True)
     wishlist = db.relationship('Wishlist', backref='book', lazy=True)
 
-    def to_dict(self):
-        return {"id": self.id, "title": self.title, "author": self.author}
-    
+    def __repr__(self):
+        return f'<Book {self.title}>, {self.author}>'
+
 
 class Order(db.Model):
     __tablename__ = 'orders'
@@ -51,8 +57,8 @@ class Order(db.Model):
     order_items = db.relationship('OrderItem', backref='order', lazy=True)
     payment = db.relationship('Payment', backref='order', lazy=True)
 
-    def to_dict(self):
-        return {"id": self.id, "user_id": self.user_id, "book_id": self.book_id}
+    def __repr__(self):
+        return f'<Order {self.id}>, {self.user_id}>, Status: {self.status} Total Price: {self.total_price}>'
     
 
 class Wishlist(db.Model):
@@ -62,8 +68,8 @@ class Wishlist(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
 
-    def to_dict(self):
-        return {"id": self.id, "user_id": self.user_id, "book_id": self.book_id}
+    def __repr__(self):
+        return f'<Wishlist User:{self.user_id}>, Book:{self.book_id}>'
 
 
 class OrderItem(db.model):
@@ -75,8 +81,8 @@ class OrderItem(db.model):
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Integer, nullable=False)
 
-    def to_dict(self):
-        return {"id": self.id, "order_id": self.order_id, "book_id": self.book_id, "quantity": self.quantity, "price": self.price}
+    def __repr__(self):
+        return f'<OrderItem Order:{self.order_id}>, Book:{self.book_id}>, Quantity: {self.quantity}>'
 
 
 class Payment(db.model):
@@ -87,3 +93,8 @@ class Payment(db.model):
     payment_method = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(100), nullable=False)
+    transaction_id = db.Column(db.String(100), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<Payment Order:{self.order_id}>, Status: {self.status}>, Transaction: {self.transaction_id}>"
