@@ -74,7 +74,7 @@ class Wishlist(db.Model):
         return f'<Wishlist User:{self.user_id}>, Book:{self.book_id}>'
 
 
-class OrderItem(db.model):
+class OrderItem(db.Model):
     __tablename__ = 'order_items'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -87,7 +87,7 @@ class OrderItem(db.model):
         return f'<OrderItem Order:{self.order_id}>, Book:{self.book_id}>, Quantity: {self.quantity}>'
 
 
-class Category(db.model):
+class Category(db.Model):
     __tablename__ = 'categories'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -99,7 +99,7 @@ class Category(db.model):
         return f'<Category {self.name}>'
     
 
-class Payment(db.model):
+class Payment(db.Model):
     __tablename__ = 'payments'
 
     id = db.Column(db.Integer, primary_key=True)
