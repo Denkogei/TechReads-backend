@@ -51,7 +51,25 @@ def login():
     
     return jsonify({'error': 'Invalid credentials'}), 401
 
+@app.route('/profile', methods=['GET'])
+@jwt_required()
+def profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 400
+    
+    return jsonify({
+        'id': user.id,
+        'name': user.name,
+        'username': user.username,
+        'email': user.email
+    })
 
+@app.route('/books', methods=['GET'])
+def get_books():
+    books = Book.query.all()
+    return jsonify([book.to_dict() for book in books])
 
 
 
