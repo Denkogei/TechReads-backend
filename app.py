@@ -88,6 +88,25 @@ def add_book():
     db.session.commit()
     return jsonify(new_book.to_dict()), 201
 
+@app.route('/books/<int:book_id>', methods=['PUT'])
+@jwt_required()
+def edit_book(book_id):
+    book = Book.query.get(book_id)
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+    
+    data = request.get_json()
+    book.title = data['title']
+    book.author = data['author']
+    book.description = data['description']
+    book.price = data['price']
+    book.stock = data['stock']
+    book.category = data['category']
+    book.image_url = data['image_url']
+    db.session.commit()
+
+    return jsonify(book.to_dict())
+
 
 
 if __name__ == "__main__":
