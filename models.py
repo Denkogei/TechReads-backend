@@ -97,6 +97,7 @@ class Category(db.model):
 
     def __repr__(self):
         return f'<Category {self.name}>'
+    
 
 class Payment(db.model):
     __tablename__ = 'payments'
