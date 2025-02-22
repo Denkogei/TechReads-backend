@@ -16,6 +16,8 @@ class User(db.Model, SerializerMixin):
     orders = db.relationship('Order', backref='user', lazy=True)
     wishlist = db.relationship('Wishlist', backref='user', lazy=True)
 
+    serialize_rules = ('-password', 'orders.user', 'wishlist.user')
+
     @validates('email')
     def validate_email(self, key, email):
         if '@' not in email:
