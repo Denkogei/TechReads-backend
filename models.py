@@ -24,3 +24,18 @@ class Book(db.Model):
     def to_dict(self):
         return {"id": self.id, "title": self.title, "author": self.author}
     
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
+
+    def to_dict(self):
+        return {"id": self.id, "user_id": self.user_id, "book_id": self.book_id}
+    
+class Wishlist(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
+
+    def to_dict(self):
+        return {"id": self.id, "user_id": self.user_id, "book_id": self.book_id}
