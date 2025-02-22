@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category
 import os
 
 app = Flask(__name__)
