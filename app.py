@@ -71,6 +71,23 @@ def get_books():
     books = Book.query.all()
     return jsonify([book.to_dict() for book in books])
 
+@app.route('/books', methods=['POST'])
+@jwt_required()
+def add_book():
+    data = request.get_json()
+    new_book = Book(
+        title=data['title']
+        author=data['author']
+        description=data['description']
+        price=data['price']
+        stock=data['stock']
+        category=data['category_id']
+        image_url=data['image_url']
+    )
+    db.session.add(new_book)
+    db.session.commit()
+    return jsonify(new_book.to_dict()), 201
+
 
 
 if __name__ == "__main__":
