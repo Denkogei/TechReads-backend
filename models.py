@@ -39,3 +39,21 @@ class Wishlist(db.Model):
 
     def to_dict(self):
         return {"id": self.id, "user_id": self.user_id, "book_id": self.book_id}
+
+class OrderItem(db.model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Integer, nullable=False)
+
+    def to_dict(self):
+        return {"id": self.id, "order_id": self.order_id, "book_id": self.book_id, "quantity": self.quantity, "price": self.price}
+
+class Payment(db.model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    payment_method = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(100), nullable=False)
+
