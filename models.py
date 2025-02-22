@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqialchemy_serializer import SerializerMixin
+from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.orm import validates
 
 db = SQLAlchemy()
@@ -35,8 +35,8 @@ class Book(db.Model):
     title = db.Column(db.String(100), nullable=False)
     author = db.Column(db.String(100), nullable=False)
     decsription = db.Column(db.String(200), nullable=False)
-    price = db.Column(db.integer, nullable=False)
-    stock = db.Column(db.integer, nullable=False)
+    price = db.Column(db.Integer, nullable=False)
+    stock = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(100), db.Foreignkey('categories.id'), nullable=False)
     image_url = db.Column(db.String(500), nullable=False)
 
