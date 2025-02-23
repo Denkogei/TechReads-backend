@@ -139,8 +139,32 @@ def get_wishlist():
     items = Wishlist.query.filter_by(user_id=user_id).all()
     return jsonify([item.to_dict() for item in items])
 
+@app.route('/orders', methods=['POST'])
+@jwt_required
+def place_order():
+    user_id = get_jwt_identity()
+    data = request.get_json()
 
+    new_order = Order(
+        user_id=user_id,
+        status='Pending',
+        total_price=data['total_price']
+        created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+    db.session.add(new_order)
+    db.session.commit()
 
+    for item in data['items']:
+        order_item = OrderItem(
+            order_id=new_order.id,
+            book_id=item['book_id'],
+            quantity=item['quantity'],
+            price=item['price']
+        )
+        db.session.add(new_order)
+
+    db.session.commit()
+    return jsonify({'message': 'Order placed successfully'}), 201
 
 if __name__ == "__main__":
     app.run(debug=True)
