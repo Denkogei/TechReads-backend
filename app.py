@@ -166,5 +166,26 @@ def place_order():
     db.session.commit()
     return jsonify({'message': 'Order placed successfully'}), 201
 
+@app.route('/payments', methods=['POST'])
+@jwt_required
+def make_payment():
+    data = request.get_json()
+    order_id=data.get['order_id']
+    payment_method=data.get['payment_method']
+    transaction_id=data.get['transaction_id']
+
+    new_payment = Payment(
+        order_id=order_id,
+        payment_method=payment_method,
+        status='Completed',
+        transaction_id=transaction_id,
+        created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+    db.session.add(new_payment)
+    db.session.commit()
+
+    return jsonify({'message': 'Payment done successfully'}), 201
+
+    
 if __name__ == "__main__":
     app.run(debug=True)
