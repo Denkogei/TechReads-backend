@@ -118,6 +118,26 @@ def delete_book(book_id):
     db.session.commit
     return jsonify({'message': 'Book deleted successfully'})
 
+@app.route('/wishlist', methods=['POST'])
+@jwt_required()
+def add_to_wishlist():
+    data = request.get_json()
+    user_id = get_jwt_identity()
+    book_id = data.get('book_id')
+
+
+    wishlist_item = Wishlist(user_id=user_id, book_id=book_id)
+    db.session.add(wishlist_item)
+    db.session.commit()
+
+    return jsonify({'message': 'Book added to Wishlist'}), 201
+
+@app.route('/wishlist', methods=['GET'])
+@jwt_required
+def get_wishlist():
+    user_id = get_jwt_identity()
+    items = Wishlist.query.filter_by(user_id=user_id).all()
+    return jsonify([item.to_dict() for item in items])
 
 
 
