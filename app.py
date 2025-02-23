@@ -107,6 +107,19 @@ def edit_book(book_id):
 
     return jsonify(book.to_dict())
 
+@app.route('/books/<int:book_id', methods=['DELETE'])
+@jwt_required()
+def delete_book(book_id):
+    book = Book.query.get(book_id)
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+    
+    db.session.delete(book)
+    db.session.commit
+    return jsonify({'message': 'Book deleted successfully'})
+
+
+
 
 
 if __name__ == "__main__":
