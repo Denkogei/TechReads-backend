@@ -2,7 +2,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.orm import validates
 
-
 db = SQLAlchemy()
 
 class User(db.Model, SerializerMixin):
@@ -28,6 +27,14 @@ class User(db.Model, SerializerMixin):
     def __repr__(self):
         return f'<User {self.username}>, {self.email}>'
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'username': self.username,
+            'email': self.email
+        }
+
 
 class Book(db.Model):
     __tablename__ = 'books'
@@ -38,7 +45,7 @@ class Book(db.Model):
     description = db.Column(db.String(200), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False) 
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     image_url = db.Column(db.String(500), nullable=False)
 
     order_items = db.relationship('OrderItem', backref='book', lazy=True)
@@ -46,6 +53,18 @@ class Book(db.Model):
 
     def __repr__(self):
         return f'<Book {self.title}>, {self.author}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'author': self.author,
+            'description': self.description,
+            'price': self.price,
+            'stock': self.stock,
+            'category_id': self.category_id,
+            'image_url': self.image_url
+        }
 
 
 class Order(db.Model):
@@ -62,7 +81,16 @@ class Order(db.Model):
 
     def __repr__(self):
         return f'<Order {self.id}>, {self.user_id}>, Status: {self.status} Total Price: {self.total_price}>'
-    
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'status': self.status,
+            'total_price': self.total_price,
+            'datetime': self.datetime
+        }
+
 
 class Wishlist(db.Model):
     __tablename__ = 'wishlist'
@@ -73,6 +101,13 @@ class Wishlist(db.Model):
 
     def __repr__(self):
         return f'<Wishlist User:{self.user_id}>, Book:{self.book_id}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'book_id': self.book_id
+        }
 
 
 class OrderItem(db.Model):
@@ -87,6 +122,15 @@ class OrderItem(db.Model):
     def __repr__(self):
         return f'<OrderItem Order:{self.order_id}>, Book:{self.book_id}>, Quantity: {self.quantity}>'
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'order_id': self.order_id,
+            'book_id': self.book_id,
+            'quantity': self.quantity,
+            'price': self.price
+        }
+
 
 class Category(db.Model):
     __tablename__ = 'categories'
@@ -98,7 +142,13 @@ class Category(db.Model):
 
     def __repr__(self):
         return f'<Category {self.name}>'
-    
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
 
 class Payment(db.Model):
     __tablename__ = 'payments'
@@ -113,3 +163,14 @@ class Payment(db.Model):
 
     def __repr__(self):
         return f"<Payment Order:{self.order_id}>, Status: {self.status}>, Transaction: {self.transaction_id}>"
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'order_id': self.order_id,
+            'payment_method': self.payment_method,
+            'amount': self.amount,
+            'status': self.status,
+            'transaction_id': self.transaction_id,
+            'created_at': self.created_at
+        }
