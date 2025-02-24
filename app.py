@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_bcrypt import Bcrypt
 from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category
 
 
@@ -15,7 +17,6 @@ app.config["JWT_SECRET_KEY"] = "your_secret_key"
 db.init_app(app)
 CORS(app)
 migrate = Migrate(app, db)
-=======
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
