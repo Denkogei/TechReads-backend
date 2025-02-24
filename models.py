@@ -38,7 +38,7 @@ class Book(db.Model):
     description = db.Column(db.String(200), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
-    category = db.Column(db.String(100), db.ForeignKey('categories.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False) 
     image_url = db.Column(db.String(500), nullable=False)
 
     order_items = db.relationship('OrderItem', backref='book', lazy=True)
