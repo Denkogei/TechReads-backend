@@ -35,10 +35,10 @@ class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     author = db.Column(db.String(100), nullable=False)
-    decsription = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
-    category = db.Column(db.String(100), db.ForeignKey('categories.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False) 
     image_url = db.Column(db.String(500), nullable=False)
 
     order_items = db.relationship('OrderItem', backref='book', lazy=True)
@@ -94,7 +94,7 @@ class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
 
-    books = db.relationship('Book', backref='category', lazy=True)
+    books = db.relationship('Book', backref='book_category', lazy=True)
 
     def __repr__(self):
         return f'<Category {self.name}>'
