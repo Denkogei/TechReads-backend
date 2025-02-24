@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -8,6 +7,12 @@ from datetime import datetime
 from flask_restful import Api
 import os
 from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category
+import os
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_bcrypt import Bcrypt
+from datetime import datetime
+from flask_restful import Api
+
 
 
 app = Flask(__name__)
@@ -23,7 +28,7 @@ migrate = Migrate(app, db)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
-jwt = JWTManger(app)
+jwt = JWTManager(app)
 
 api = Api(app)
 
@@ -52,7 +57,7 @@ def login():
     password = data.get('password')
 
     user = User.query.filter_by(email=email).first()
-    if user and bcrypt.check_password_has(user.password, password):
+    if user and bcrypt.check_password_hash(user.password, password):
         access_token = create_access_token(identity=user.id)
         return jsonify({'access_token': access_token}), 200
     
@@ -83,13 +88,13 @@ def get_books():
 def add_book():
     data = request.get_json()
     new_book = Book(
-        title=data['title']
-        author=data['author']
-        description=data['description']
-        price=data['price']
-        stock=data['stock']
-        category=data['category_id']
-        image_url=data['image_url']
+        title=data['title'],
+        author=data['author'],
+        description=data['description'],
+        price=data['price'],
+        stock=data['stock'],
+        category_id=data['category_id'],
+        image_url=data['image_url'],
     )
     db.session.add(new_book)
     db.session.commit()
@@ -108,13 +113,13 @@ def edit_book(book_id):
     book.description = data['description']
     book.price = data['price']
     book.stock = data['stock']
-    book.category = data['category']
+    book.category_id = data['category_id']
     book.image_url = data['image_url']
     db.session.commit()
 
     return jsonify(book.to_dict())
 
-@app.route('/books/<int:book_id', methods=['DELETE'])
+@app.route('/books/<int:book_id>', methods=['DELETE'])
 @jwt_required()
 def delete_book(book_id):
     book = Book.query.get(book_id)
@@ -122,7 +127,7 @@ def delete_book(book_id):
         return jsonify({'error': 'Book not found'}), 404
     
     db.session.delete(book)
-    db.session.commit
+    db.session.commit()
     return jsonify({'message': 'Book deleted successfully'})
 
 @app.route('/wishlist', methods=['POST'])
@@ -140,11 +145,11 @@ def add_to_wishlist():
     return jsonify({'message': 'Book added to Wishlist'}), 201
 
 @app.route('/wishlist', methods=['GET'])
-@jwt_required
+@jwt_required()
 def get_wishlist():
     user_id = get_jwt_identity()
     items = Wishlist.query.filter_by(user_id=user_id).all()
-    return jsonify([item.to_dict() for item in items])
+    return jsonify([item.to_dict() if hasattr(item, 'to_dict') else {} for item in items])
 
 @app.route('/orders', methods=['POST'])
 @jwt_required
@@ -155,11 +160,19 @@ def place_order():
     new_order = Order(
         user_id=user_id,
         status='Pending',
-        total_price=data['total_price']
+        total_price=data['total_price'],
         created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     )
     db.session.add(new_order)
     db.session.commit()
+
+    items = data.get('items', [])
+    if not items:
+        return jsonify({'error': 'No items provided'}), 400
+
+    for item in items:
+        if 'book_id' not in item or 'quantity' not in item or 'price' not in item:
+            return jsonify({'error': 'Invalid item data'}), 400
 
     for item in data['items']:
         order_item = OrderItem(
@@ -168,18 +181,18 @@ def place_order():
             quantity=item['quantity'],
             price=item['price']
         )
-        db.session.add(new_order)
+        db.session.add(order_item)
 
     db.session.commit()
     return jsonify({'message': 'Order placed successfully'}), 201
 
 @app.route('/payments', methods=['POST'])
-@jwt_required
+@jwt_required()
 def make_payment():
     data = request.get_json()
-    order_id=data.get['order_id']
-    payment_method=data.get['payment_method']
-    transaction_id=data.get['transaction_id']
+    order_id = data.get('order_id')
+    payment_method = data.get('payment_method')
+    transaction_id = data.get('transaction_id')
 
     new_payment = Payment(
         order_id=order_id,
@@ -196,4 +209,4 @@ def make_payment():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, pot=5555)
+    app.run(debug=True, port=5555)
