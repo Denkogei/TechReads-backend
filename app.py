@@ -7,11 +7,6 @@ from datetime import datetime
 from flask_restful import Api
 import os
 from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category
-import os
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from flask_bcrypt import Bcrypt
-from datetime import datetime
-
 
 app = Flask(__name__)
 
@@ -27,6 +22,10 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 api = Api(app)
+
+@app.route('/')
+def home():
+    return jsonify({"message": "Welcome to TechReads API!"})
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -133,7 +132,6 @@ def add_to_wishlist():
     user_id = get_jwt_identity()
     book_id = data.get('book_id')
 
-
     wishlist_item = Wishlist(user_id=user_id, book_id=book_id)
     db.session.add(wishlist_item)
     db.session.commit()
@@ -145,10 +143,10 @@ def add_to_wishlist():
 def get_wishlist():
     user_id = get_jwt_identity()
     items = Wishlist.query.filter_by(user_id=user_id).all()
-    return jsonify([item.to_dict() if hasattr(item, 'to_dict') else {} for item in items])
+    return jsonify([item.to_dict() for item in items])
 
 @app.route('/orders', methods=['POST'])
-@jwt_required
+@jwt_required()
 def place_order():
     user_id = get_jwt_identity()
     data = request.get_json()
@@ -201,8 +199,6 @@ def make_payment():
     db.session.commit()
 
     return jsonify({'message': 'Payment done successfully'}), 201
-
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=5555)
