@@ -1,6 +1,6 @@
 from faker import Faker
 from app import app, db
-from models import User, Book, Category
+from models import User, Book, Category, Order, OrderItem
 from datetime import datetime
 import random
 
@@ -59,4 +59,20 @@ def seed_data():
             db.session.add(order)
         db.session.commit()
 
+        order_items = []
+        for order in orders:
+            for _ in range(random.randint(1, 5)):
+                order_item = OrderItem(
+                    order_id=order.id,
+                    book_id=random.choice(books).id,
+                    quantity=random.randint(1, 5),
+                    price=random.randint(10, 100)
+                )
+                order_items.append(order_item)
+                db.session.add(order_item)
+        db.session.commit()
+
         print("Database seeded successfully!")
+
+if __name__ == "__main__":
+    seed_data()
