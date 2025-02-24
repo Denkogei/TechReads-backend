@@ -35,7 +35,7 @@ class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     author = db.Column(db.String(100), nullable=False)
-    decsription = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(100), db.ForeignKey('categories.id'), nullable=False)
