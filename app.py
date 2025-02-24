@@ -11,8 +11,6 @@ import os
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
 from datetime import datetime
-from flask_restful import Api
-
 
 
 app = Flask(__name__)
@@ -24,8 +22,6 @@ app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
 db.init_app(app)
 CORS(app)
-migrate = Migrate(app, db)
-db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
