@@ -33,4 +33,18 @@ def seed_data():
         db.session.commit()
         print("Categories seeded!")
 
-        
+        books = []
+        for _ in range(50):
+            book = Book(
+                title=fake.sentence(),
+                author=fake.name(),
+                description=fake.text(),
+                price=random.randint(10, 100),
+                stock=random.randint(0, 100),
+                category_id=random.choice(categories).id,
+                image_url=fake.image_url()
+            )
+            books.append(book)
+            db.session.add(book)
+        db.session.commit()
+        print("Books seeded!")
