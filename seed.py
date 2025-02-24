@@ -53,7 +53,7 @@ def seed_data():
         orders = []
         for _ in range(20):
             order = Order(
-                user_idrandom.choice(users).id,
+                user_id=random.choice(users).id,
                 status=random.choice(['Pending', 'Shipped', 'Delivered']),
                 total_price=random.randint(1000, 10000),
                 datetime=fake.date_time()
@@ -63,7 +63,4 @@ def seed_data():
         db.session.commit()
         print("Orders seeded!")
 
-        print("Database seeding completed!")
-
-if __name__ == '__main__':
-    seed_data()
+        print("Database seeded successfully!")
