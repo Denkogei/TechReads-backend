@@ -23,7 +23,6 @@ def seed_data():
             users.append(user)
             db.session.add(user)
         db.session.commit()
-        print("Seeded users")
 
         category_names = ['Programming', 'Software Architecture', 'Web Development', 'Data Science', 'Artificial Intelligence', 'Cybersecurity', 'DevOps']
         categories = []
@@ -32,7 +31,6 @@ def seed_data():
             categories.append(category)
             db.session.add(category)
         db.session.commit()
-        print("Categories seeded!")
 
         books = []
         for _ in range(50):
@@ -48,7 +46,6 @@ def seed_data():
             books.append(book)
             db.session.add(book)
         db.session.commit()
-        print("Books seeded!")
 
         orders = []
         for _ in range(20):
@@ -61,6 +58,5 @@ def seed_data():
             orders.append(order)
             db.session.add(order)
         db.session.commit()
-        print("Orders seeded!")
 
         print("Database seeded successfully!")

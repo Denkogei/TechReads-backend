@@ -13,6 +13,7 @@ flask-jwt-extended = "*"
 flask-bcrypt = "*"
 flask-sqlalchemy = "*"
 flask-restful = "*"
+faker = "*"
 
 [dev-packages]
 
