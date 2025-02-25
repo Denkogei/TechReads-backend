@@ -61,7 +61,7 @@ def seed_data():
                 stock=random.randint(5, 50),
                 category_id=random.choice(categories).id,
                 image_url=fake.image_url(),
-                rating=(random.uniform(1.0, 5.0), 1),
+                rating=random.uniform(1.0, 5.0),
                 out_of_stock=(stock == 0)
             )
             books.append(book)
