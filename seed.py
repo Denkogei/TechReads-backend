@@ -52,6 +52,7 @@ def seed_data():
 
         books = []
         for title, author, description in book_data:
+            stock = random.randint(0, 50)
             book = Book(
                 title=title,
                 author=author,
@@ -59,7 +60,9 @@ def seed_data():
                 price=random.randint(1500, 15000),
                 stock=random.randint(5, 50),
                 category_id=random.choice(categories).id,
-                image_url=fake.image_url()
+                image_url=fake.image_url(),
+                rating=(random.uniform(1.0, 5.0), 1),
+                out_of_stock=(stock == 0)
             )
             books.append(book)
             db.session.add(book)
