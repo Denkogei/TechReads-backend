@@ -57,7 +57,7 @@ def seed_data():
                 author=author,
                 description=description,
                 price=random.randint(1500, 15000),
-                stock=random.randint(5, 50,
+                stock=random.randint(5, 50),
                 category_id=random.choice(categories).id,
                 image_url=fake.image_url()
             )
