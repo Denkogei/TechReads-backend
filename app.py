@@ -58,7 +58,70 @@ def login():
     
     return jsonify({'error': 'Invalid credentials'}), 401
 
-@app
+@app.route('/admin/orders', methods=['GET'])
+@jwt_required()
+def admin_get_orders():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user.is_admin:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    orders = Order.query.all()
+    return jsonify([order.to_dict() for order in orders])
+
+@app.route('/admin/orders/<int:order_id>', methods=['PUT'])
+@jwt_required()
+def admin_update_order(order_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user.is_admin:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({'error': 'Order not found'}), 404
+
+    data = request.get_json()
+    order.status = data.get('status', order.status)
+    db.session.commit()
+
+    return jsonify(order.to_dict())
+
+@app.route('/admin/books', methods=['GET'])
+@jwt_required()
+def admin_get_books():
+    # Ensure the user is an admin
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user.is_admin:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    books = Book.query.all()
+    return jsonify([book.to_dict() for book in books])
+
+@app.route('/admin/books/<int:book_id>', methods=['PUT'])
+@jwt_required()
+def admin_update_book(book_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user.is_admin:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    book = Book.query.get(book_id)
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+
+    data = request.get_json()
+    book.title = data.get('title', book.title)
+    book.author = data.get('author', book.author)
+    book.description = data.get('description', book.description)
+    book.price = data.get('price', book.price)
+    book.stock = data.get('stock', book.stock)
+    book.category_id = data.get('category_id', book.category_id)
+    book.image_url = data.get('image_url', book.image_url)
+    db.session.commit()
+
+    return jsonify(book.to_dict())
 
 @app.route('/profile', methods=['GET'])
 @jwt_required()
