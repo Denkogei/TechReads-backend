@@ -79,14 +79,27 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
-
     user = User.query.filter_by(email=email).first()
+
+    if user:
+        print(f"User found: {user.name}, {user.email}")  
+
     if user and bcrypt.check_password_hash(user.password, password):
         access_token = create_access_token(identity=user.id, expires_delta=False)
         refresh_token = create_refresh_token(identity=user.id)
-        return jsonify({'access_token': access_token, 'refresh_token': refresh_token}), 200
-   
+
+        return jsonify({
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'user': {
+                'name': user.name,
+                'email': user.email
+            }
+        }), 200
+
     return jsonify({'error': 'Invalid credentials'}), 401
+
+
 
 
 @app.route('/logout', methods=['POST'])
