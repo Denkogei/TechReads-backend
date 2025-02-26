@@ -12,6 +12,7 @@ class User(db.Model, SerializerMixin):
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(100), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
     orders = db.relationship('Order', backref='user', lazy=True)
     wishlist = db.relationship('Wishlist', backref='user', lazy=True)
@@ -32,7 +33,8 @@ class User(db.Model, SerializerMixin):
             'id': self.id,
             'name': self.name,
             'username': self.username,
-            'email': self.email
+            'email': self.email,
+            'is_admin': self.is_admin
         }
 
 
@@ -47,12 +49,14 @@ class Book(db.Model):
     stock = db.Column(db.Integer, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     image_url = db.Column(db.String(500), nullable=False)
+    rating = db.Column(db.Float, nullable=False, default=3.5)
+    out_of_stock = db.Column(db.Boolean, nullable=False, default=False)
 
     order_items = db.relationship('OrderItem', backref='book', lazy=True)
     wishlist = db.relationship('Wishlist', backref='book', lazy=True)
 
     def __repr__(self):
-        return f'<Book {self.title}>, {self.author}>'
+        return f'<Book {self.title}, {self.author}, Rating: {self.rating}, Stock: {self.stock}>'
 
     def to_dict(self):
         return {
@@ -63,7 +67,9 @@ class Book(db.Model):
             'price': self.price,
             'stock': self.stock,
             'category_id': self.category_id,
-            'image_url': self.image_url
+            'image_url': self.image_url,
+            'rating': self.rating,
+            'out_of_stock': self.stock == 0
         }
 
 

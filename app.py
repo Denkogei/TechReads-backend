@@ -59,6 +59,71 @@ def login():
     
     return jsonify({'error': 'Invalid credentials'}), 401
 
+@app.route('/admin/orders', methods=['GET'])
+@jwt_required()
+def admin_get_orders():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user.is_admin:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    orders = Order.query.all()
+    return jsonify([order.to_dict() for order in orders])
+
+@app.route('/admin/orders/<int:order_id>', methods=['PUT'])
+@jwt_required()
+def admin_update_order(order_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user.is_admin:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({'error': 'Order not found'}), 404
+
+    data = request.get_json()
+    order.status = data.get('status', order.status)
+    db.session.commit()
+
+    return jsonify(order.to_dict())
+
+@app.route('/admin/books', methods=['GET'])
+@jwt_required()
+def admin_get_books():
+    # Ensure the user is an admin
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user.is_admin:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    books = Book.query.all()
+    return jsonify([book.to_dict() for book in books])
+
+@app.route('/admin/books/<int:book_id>', methods=['PUT'])
+@jwt_required()
+def admin_update_book(book_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user.is_admin:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    book = Book.query.get(book_id)
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+
+    data = request.get_json()
+    book.title = data.get('title', book.title)
+    book.author = data.get('author', book.author)
+    book.description = data.get('description', book.description)
+    book.price = data.get('price', book.price)
+    book.stock = data.get('stock', book.stock)
+    book.category_id = data.get('category_id', book.category_id)
+    book.image_url = data.get('image_url', book.image_url)
+    db.session.commit()
+
+    return jsonify(book.to_dict())
+
 @app.route('/profile', methods=['GET'])
 @jwt_required()
 def profile():
@@ -180,6 +245,44 @@ def place_order():
 
     db.session.commit()
     return jsonify({'message': 'Order placed successfully'}), 201
+
+@app.route('/categories', methods=['GET'])
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([category.to_dict() for category in categories])
+
+@app.route('/categories', methods=['POST'])
+@jwt_required()
+def add_category():
+    data = request.get_json()
+    new_category = Category(name=data['name'])
+    db.session.add(new_category)
+    db.session.commit()
+    return jsonify(new_category.to_dict()), 201
+
+@app.route('/categories/<int:category_id>', methods=['PUT'])
+@jwt_required()
+def edit_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({'error': 'Category not found'}), 404
+    
+    data = request.get_json()
+    category.name = data['name']
+    db.session.commit()
+
+    return jsonify(category.to_dict())
+
+@app.route('/categories/<int:category_id>', methods=['DELETE'])
+@jwt_required()
+def delete_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({'error': 'Category not found'}), 404
+    
+    db.session.delete(category)
+    db.session.commit()
+    return jsonify({'message': 'Category deleted successfully'})
 
 @app.route('/payments', methods=['POST'])
 @jwt_required()
