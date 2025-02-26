@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, create_refresh_token
 from flask_bcrypt import Bcrypt
 from datetime import datetime
 from flask_restful import Api
@@ -53,8 +53,9 @@ def login():
 
     user = User.query.filter_by(email=email).first()
     if user and bcrypt.check_password_hash(user.password, password):
-        access_token = create_access_token(identity=user.id)
-        return jsonify({'access_token': access_token}), 200
+        access_token = create_access_token(identity=user.id, expires_delta=False)
+        refresh_token = create_refresh_token(identity=user.id)
+        return jsonify({'access_token': access_token, 'refresh_token': refresh_token}), 200
     
     return jsonify({'error': 'Invalid credentials'}), 401
 
@@ -302,6 +303,13 @@ def make_payment():
     db.session.commit()
 
     return jsonify({'message': 'Payment done successfully'}), 201
+
+@app.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    identity = get_jwt_identity()
+    new_access_token = create_access_token(identity=identity, expires_delta=False)
+    return jsonify({'access_token': new_access_token}), 200
 
 if __name__ == "__main__":
     app.run(debug=True, port=5555)
