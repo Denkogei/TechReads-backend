@@ -12,6 +12,7 @@ class User(db.Model, SerializerMixin):
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(100), nullable=False)
+    is_admin = db.Column(db.Boolean), default=False)
 
     orders = db.relationship('Order', backref='user', lazy=True)
     wishlist = db.relationship('Wishlist', backref='user', lazy=True)
@@ -32,7 +33,8 @@ class User(db.Model, SerializerMixin):
             'id': self.id,
             'name': self.name,
             'username': self.username,
-            'email': self.email
+            'email': self.email,
+            'is_admin': self.is_admin
         }
 
 
