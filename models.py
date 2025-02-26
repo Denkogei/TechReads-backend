@@ -174,3 +174,23 @@ class Payment(db.Model):
             'transaction_id': self.transaction_id,
             'created_at': self.created_at
         }
+
+class CartItem(db.Model):
+    __tablename__ = 'cart_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+    user = db.relationship('User', backref='cart_items')
+    book = db.relationship('Book', backref='cart_items')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'book_id': self.book_id,
+            'quantity': self.quantity,
+            'book_title': self.book.title
+        }

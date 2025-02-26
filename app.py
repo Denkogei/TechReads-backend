@@ -1,12 +1,13 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, create_refresh_token
+from flask_jwt_extended import JWTManager, get_jwt, create_access_token, jwt_required, get_jwt_identity, create_refresh_token
 from flask_bcrypt import Bcrypt
 from datetime import datetime
 from flask_restful import Api
 import os
-from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category
+from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category, CartItem
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -22,6 +23,23 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 api = Api(app)
+
+def token_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({"message": "Token is missing!"}), 400
+        try:
+            token = token.replace("Bearer ", "")
+            user_id = get_jwt_identity()
+            current_user = User.query.get(user_id)
+            if not current_user:
+                return jsonify({"message": "User not found!"}), 404
+        except Exception as e:
+            return jsonify({"message": str(e)}), 401
+        return f(current_user, *args, **kwargs)
+    return decorated_function
 
 @app.route('/')
 def home():
@@ -59,6 +77,12 @@ def login():
     
     return jsonify({'error': 'Invalid credentials'}), 401
 
+@app.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    jti = get_jwt().get("jti")
+    return jsonify({'message': 'Logged out successfully', 'jti': jti}), 200
+
 @app.route('/profile', methods=['GET'])
 @jwt_required()
 def profile():
@@ -75,6 +99,7 @@ def profile():
     })
 
 @app.route('/books', methods=['GET'])
+@jwt_required()
 def get_books():
     books = Book.query.all()
     return jsonify([book.to_dict() for book in books])
@@ -146,6 +171,41 @@ def get_wishlist():
     items = Wishlist.query.filter_by(user_id=user_id).all()
     return jsonify([item.to_dict() for item in items])
 
+@app.route('/cart', methods=['POST'])
+@jwt_required
+def add_to_cart():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    book_id = data.get('book_id')
+    quantity = data.get('quantity', 1)
+
+    user = User.query.get(user_id)
+    book = Book.query.get(book_id)
+    if not user or not book:
+        return jsonify({'error': 'Invalid user or book ID'}), 404
+
+    
+    if book.stock < quantity:
+        return jsonify({'error': 'Not enough stock available'}), 400
+
+    cart_item = CartItem.query.filter_by(user_id=user_id, book_id=book_id).first()
+    if cart_item:
+        cart_item.quantity += quantity
+        if cart_item.quantity > book.stock:
+            return jsonify({'error': 'Not enough stock available for the updated quantity'}), 400
+    else:
+        cart_item = CartItem(user_id=user_id, book_id=book_id, quantity=quantity)
+        db.session.add(cart_item)
+
+    db.session.commit()
+    return jsonify(cart_item.to_dict()), 201
+
+@app.route('/cart/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_cart(user_id):
+    cart_items = CartItem.query.filter_by(user_id=user_id).all()
+    return jsonify([item.to_dict() for item in cart_items]), 200
+
 @app.route('/orders', methods=['POST'])
 @jwt_required()
 def place_order():
@@ -156,7 +216,7 @@ def place_order():
         user_id=user_id,
         status='Pending',
         total_price=data['total_price'],
-        created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        datetime=datetime.now() 
     )
     db.session.add(new_order)
     db.session.commit()
@@ -169,7 +229,7 @@ def place_order():
         if 'book_id' not in item or 'quantity' not in item or 'price' not in item:
             return jsonify({'error': 'Invalid item data'}), 400
 
-    for item in data['items']:
+    for item in items:
         order_item = OrderItem(
             order_id=new_order.id,
             book_id=item['book_id'],
