@@ -58,6 +58,8 @@ def login():
     
     return jsonify({'error': 'Invalid credentials'}), 401
 
+@app
+
 @app.route('/profile', methods=['GET'])
 @jwt_required()
 def profile():
