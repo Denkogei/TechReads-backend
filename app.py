@@ -245,6 +245,44 @@ def place_order():
     db.session.commit()
     return jsonify({'message': 'Order placed successfully'}), 201
 
+@app.route('/categories', methods=['GET'])
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([category.to_dict() for category in categories])
+
+@app.route('/categories', methods=['POST'])
+@jwt_required()
+def add_category():
+    data = request.get_json()
+    new_category = Category(name=data['name'])
+    db.session.add(new_category)
+    db.session.commit()
+    return jsonify(new_category.to_dict()), 201
+
+@app.route('/categories/<int:category_id>', methods=['PUT'])
+@jwt_required()
+def edit_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({'error': 'Category not found'}), 404
+    
+    data = request.get_json()
+    category.name = data['name']
+    db.session.commit()
+
+    return jsonify(category.to_dict())
+
+@app.route('/categories/<int:category_id>', methods=['DELETE'])
+@jwt_required()
+def delete_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({'error': 'Category not found'}), 404
+    
+    db.session.delete(category)
+    db.session.commit()
+    return jsonify({'message': 'Category deleted successfully'})
+
 @app.route('/payments', methods=['POST'])
 @jwt_required()
 def make_payment():
