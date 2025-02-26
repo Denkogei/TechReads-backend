@@ -7,7 +7,8 @@ db = SQLAlchemy()
 
 
 class User(db.Model, SerializerMixin):
-    __tablename__ = 'users'
+    __tablename__ = 'users'  
+
 
 
     id = db.Column(db.Integer, primary_key=True)
@@ -21,7 +22,8 @@ class User(db.Model, SerializerMixin):
     wishlist = db.relationship('Wishlist', backref='user', lazy=True)
 
 
-    serialize_rules = ('-password', 'orders.user', 'wishlist.user')
+    serialize_rules = ('-password', 'name', 'email', 'username', 'orders', 'wishlist')
+
 
 
     @validates('email')
