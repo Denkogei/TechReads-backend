@@ -72,7 +72,6 @@ def signup():
 
     return jsonify({'message': 'User created successfully'}), 201
 
-
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -82,7 +81,7 @@ def login():
     user = User.query.filter_by(email=email).first()
 
     if user:
-        print(f"User found: {user.name}, {user.email}")  
+        print(f"User found: {user.id}, {user.name}, {user.email}")  
 
     if user and bcrypt.check_password_hash(user.password, password):
         access_token = create_access_token(identity=user.id, expires_delta=False)
@@ -93,11 +92,13 @@ def login():
             'refresh_token': refresh_token,
             'user': {
                 'name': user.name,
-                'email': user.email
+                'email': user.email, 
+                'id': user.id,
             }
         }), 200
 
     return jsonify({'error': 'Invalid credentials'}), 401
+
 
 
 
@@ -183,18 +184,22 @@ def delete_book(book_id):
     return jsonify({'message': 'Book deleted successfully'})
 
 
-@app.route('/wishlist', methods=['POST'])
+@app.route('/wishlist/<int:book_id>', methods=['POST'])
 @jwt_required()
-def add_to_wishlist():
-    data = request.get_json()
+def add_to_wishlist(book_id):
     user_id = get_jwt_identity()
-    book_id = data.get('book_id')
 
+    book = Book.query.get(book_id)
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+
+    existing_item = Wishlist.query.filter_by(user_id=user_id, book_id=book_id).first()
+    if existing_item:
+        return jsonify({'message': 'Book already in Wishlist'}), 200
 
     wishlist_item = Wishlist(user_id=user_id, book_id=book_id)
     db.session.add(wishlist_item)
     db.session.commit()
-
 
     return jsonify({'message': 'Book added to Wishlist'}), 201
 
@@ -207,41 +212,36 @@ def get_wishlist():
     return jsonify([item.to_dict() for item in items])
 
 
-@app.route('/cart', methods=['POST'])
+@app.route('/cart/<int:book_id>', methods=['POST'])
 @jwt_required()
-def add_to_cart():
-    data = request.get_json()
-    user_id = data.get('user_id')
-    book_id = data.get('book_id')
-    quantity = data.get('quantity', 1)
+def add_to_cart(book_id):
+        # Get the user ID from the JWT token
+        user_id = get_jwt_identity()
 
-    if not all([user_id, book_id, isinstance(quantity, int)]):
-        return jsonify({'error': 'Invalid input data'}), 400
+        # Retrieve the book by its ID
+        book = Book.query.get(book_id)
+        if not book:
+            return jsonify({'error': 'Book not found'}), 404
 
-    user = User.query.get(user_id)
-    book = Book.query.get(book_id)
+        # Check if the quantity is provided in the request
+        quantity = request.json.get('quantity', 1)  # Default quantity is 1
 
-    if not user or not book:
-        return jsonify({'error': 'Invalid user or book ID'}), 404
+        # Check if the book already exists in the cart for the user
+        existing_item = CartItem.query.filter_by(user_id=user_id, book_id=book_id).first()
+        if existing_item:
+            return jsonify({'message': 'Book already in your cart'}), 200
 
-    if not isinstance(book.stock, int) or book.stock < quantity:
-        return jsonify({'error': 'Not enough stock available'}), 400
-
-    cart_item = CartItem.query.filter_by(user_id=user_id, book_id=book_id).first()
-    if cart_item:
-        cart_item.quantity += quantity
-        if cart_item.quantity > book.stock:
-            return jsonify({'error': 'Not enough stock available for the updated quantity'}), 400
-    else:
+        # Create a new cart item and set the quantity
         cart_item = CartItem(user_id=user_id, book_id=book_id, quantity=quantity)
-        db.session.add(cart_item)
 
-    try:
+        # Add the cart item to the session and commit the changes
+        db.session.add(cart_item)
         db.session.commit()
-        return jsonify(cart_item.to_dict()), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+
+        return jsonify({'message': 'Book added to cart'}), 201
+
+
+    
 
 @app.route('/cart/<int:user_id>', methods=['GET'])
 @jwt_required()
