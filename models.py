@@ -239,5 +239,7 @@ class CartItem(db.Model):
             'user_id': self.user_id,
             'book_id': self.book_id,
             'quantity': self.quantity,
-            'book_title': self.book.title
+            'book_title': self.book.title,
+            'price': self.book.price,
+            'image_url': self.book.image_url
         }
