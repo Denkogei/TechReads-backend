@@ -244,6 +244,20 @@ def get_cart(user_id):
     return jsonify([item.to_dict() for item in cart_items]), 200
 
 
+@app.route('/cart/<int:item_id>', methods=['DELETE'])
+@jwt_required()
+def delete_cart_item(item_id):
+    cart_item = CartItem.query.get(item_id)
+
+    if not cart_item:
+        return jsonify({'error': 'Cart item not found'}), 404
+
+    db.session.delete(cart_item)
+    db.session.commit()
+
+    return jsonify({'message': 'Cart item deleted successfully'}), 200
+
+
 @app.route('/orders', methods=['GET'])
 @jwt_required()
 def get_orders():
