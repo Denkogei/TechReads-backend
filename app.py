@@ -215,26 +215,20 @@ def get_wishlist():
 @app.route('/cart/<int:book_id>', methods=['POST'])
 @jwt_required()
 def add_to_cart(book_id):
-        # Get the user ID from the JWT token
         user_id = get_jwt_identity()
 
-        # Retrieve the book by its ID
         book = Book.query.get(book_id)
         if not book:
             return jsonify({'error': 'Book not found'}), 404
 
-        # Check if the quantity is provided in the request
-        quantity = request.json.get('quantity', 1)  # Default quantity is 1
+        quantity = request.json.get('quantity', 1)  
 
-        # Check if the book already exists in the cart for the user
         existing_item = CartItem.query.filter_by(user_id=user_id, book_id=book_id).first()
         if existing_item:
             return jsonify({'message': 'Book already in your cart'}), 200
 
-        # Create a new cart item and set the quantity
         cart_item = CartItem(user_id=user_id, book_id=book_id, quantity=quantity)
 
-        # Add the cart item to the session and commit the changes
         db.session.add(cart_item)
         db.session.commit()
 
@@ -248,6 +242,21 @@ def add_to_cart(book_id):
 def get_cart(user_id):
     cart_items = CartItem.query.filter_by(user_id=user_id).all()
     return jsonify([item.to_dict() for item in cart_items]), 200
+
+
+@app.route('/orders', methods=['GET'])
+@jwt_required()
+def get_orders():
+    user_id = get_jwt_identity()
+    print("JWT Identity (user_id):", user_id)  # Debug print
+    orders = Order.query.filter_by(user_id=user_id).order_by(Order.datetime.desc()).all()
+    print("Orders fetched from DB:", orders)  # Debug print
+
+    # Check if orders are being fetched correctly
+    if not orders:
+        print("No orders found for user_id:", user_id)  # Debug print
+
+    return jsonify([order.to_dict() for order in orders]), 200
 
 
 @app.route('/orders', methods=['POST'])
