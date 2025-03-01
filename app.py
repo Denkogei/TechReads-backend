@@ -132,6 +132,12 @@ def get_books():
     books = Book.query.all()
     return jsonify([book.to_dict() for book in books])
 
+@app.route('/books/<int:id>', methods=['GET'])
+@jwt_required()
+def get_book_by_id(id):
+    book = Book.query.get_or_404(id)  
+    return jsonify(book.to_dict())  
+
 
 @app.route('/books', methods=['POST'])
 @jwt_required()
@@ -207,9 +213,32 @@ def add_to_wishlist(book_id):
 @app.route('/wishlist', methods=['GET'])
 @jwt_required()
 def get_wishlist():
+    current_user = get_jwt_identity()  # Ensure you're fetching the correct user
+    wishlist_items = Wishlist.query.filter_by(user_id=current_user).all()
+    print("Fetched Wishlist:", wishlist_items)  # Debugging log
+    return jsonify([item.to_dict() for item in wishlist_items]), 200
+
+
+@app.route('/wishlist/<int:id>', methods=['GET'])
+@jwt_required()
+def get_wishlist_by_id(id):
+    wishlist_item = Wishlist.query.get(id)
+    if wishlist_item:
+        return jsonify(wishlist_item.to_dict()), 200
+    return jsonify({'error': 'Wishlist item not found'}), 404
+
+@app.route('/wishlist/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_wishlist_item(id):
     user_id = get_jwt_identity()
-    items = Wishlist.query.filter_by(user_id=user_id).all()
-    return jsonify([item.to_dict() for item in items])
+    wishlist_item = Wishlist.query.filter_by(id=id, user_id=user_id).first()
+    if not wishlist_item:
+        return jsonify({'error': 'Item not found or unauthorized'}), 404
+    
+    db.session.delete(wishlist_item)
+    db.session.commit()
+    return jsonify({'message': 'Item removed'}), 200
+
 
 
 @app.route('/cart/<int:book_id>', methods=['POST'])

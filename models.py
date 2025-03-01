@@ -133,7 +133,11 @@ class Wishlist(db.Model):
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'book_id': self.book_id
+            'book_id': self.book_id,
+            'title': self.book.title if self.book else None,
+            'image_url': self.book.image_url if self.book else None,
+            'price': self.book.price if self.book else None,
+            'stock': self.book.stock if self.book else None
         }
 
 
