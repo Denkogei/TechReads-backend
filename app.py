@@ -8,6 +8,86 @@ from flask_restful import Api
 import os
 from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category, CartItem
 from functools import wraps
+import requests
+import base64
+
+# Mpesa Configurations
+MPESA_CONSUMER_KEY = os.getenv("vV7XMCdKgl9GeALAKdDjU8ObcqPTmkYIK3gZOKQ8c1SvjNME")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")  # Your paybill or till number
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")  # Get from Safaricom Developer Portal
+MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"  # Use production URL for live payments
+CALLBACK_URL = "https://yourdomain.com/mpesa/callback"  # Replace with your real callback URL
+
+def get_mpesa_access_token():
+    """Generate an access token for Mpesa API."""
+    url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+    response = requests.get(url, auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET))
+    response_json = response.json()
+    return response_json.get("access_token")
+
+@app.route('/mpesa/stkpush', methods=['POST'])
+@jwt_required()
+def mpesa_stkpush():
+    """Initiates an STK push payment request."""
+    data = request.get_json()
+    phone_number = data.get("phone_number")  # User's phone number
+    amount = data.get("amount")  # Amount to be paid
+    order_id = data.get("order_id")  # Order ID
+
+    if not phone_number or not amount or not order_id:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    access_token = get_mpesa_access_token()
+    
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
+
+    payload = {
+        "BusinessShortCode": MPESA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": amount,
+        "PartyA": phone_number,
+        "PartyB": MPESA_SHORTCODE,
+        "PhoneNumber": phone_number,
+        "CallBackURL": CALLBACK_URL,
+        "AccountReference": str(order_id),
+        "TransactionDesc": "Payment for TechReads Order"
+    }
+
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+    response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
+    
+    return response.json()
+
+@app.route('/mpesa/callback', methods=['POST'])
+def mpesa_callback():
+    """Handles Mpesa STK push callback."""
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "Invalid callback data"}), 400
+
+    result_code = data["Body"]["stkCallback"]["ResultCode"]
+    result_desc = data["Body"]["stkCallback"]["ResultDesc"]
+    order_id = data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][0]["Value"]
+
+    if result_code == 0:
+        transaction_id = data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][1]["Value"]
+        
+        # Update payment status in DB
+        payment = Payment.query.filter_by(order_id=order_id).first()
+        if payment:
+            payment.status = "Completed"
+            payment.transaction_id = transaction_id
+            db.session.commit()
+
+        return jsonify({"message": "Payment successful", "transaction_id": transaction_id}), 200
+    else:
+        return jsonify({"error": "Payment failed", "description": result_desc}), 400
+
 
 
 app = Flask(__name__)
