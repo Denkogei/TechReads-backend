@@ -78,11 +78,32 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
+    # Check if the email matches the admin email
+    if email == "admin@gmail.com":
+        # Get the user by email (admin account)
+        user = User.query.filter_by(email=email).first()
+
+        # If user found and password is correct
+        if user and bcrypt.check_password_hash(user.password, password):
+            access_token = create_access_token(identity=user.id, expires_delta=False)
+            refresh_token = create_refresh_token(identity=user.id)
+
+            return jsonify({
+                'access_token': access_token,
+                'refresh_token': refresh_token,
+                'user': {
+                    'name': user.name,
+                    'email': user.email, 
+                    'id': user.id,
+                }
+            }), 200
+
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+    # If it's not the admin email, check for other users
     user = User.query.filter_by(email=email).first()
 
-    if user:
-        print(f"User found: {user.id}, {user.name}, {user.email}")  
-
+    # If user found and password is correct
     if user and bcrypt.check_password_hash(user.password, password):
         access_token = create_access_token(identity=user.id, expires_delta=False)
         refresh_token = create_refresh_token(identity=user.id)
@@ -98,8 +119,6 @@ def login():
         }), 200
 
     return jsonify({'error': 'Invalid credentials'}), 401
-
-
 
 
 
