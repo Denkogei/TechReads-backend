@@ -282,9 +282,6 @@ def add_to_cart(book_id):
 
         return jsonify({'message': 'Book added to cart'}), 201
 
-
-    
-
 @app.route('/cart/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_cart(user_id):
@@ -329,6 +326,11 @@ def update_cart_item(book_id):
 
     return jsonify({"message": "Cart updated successfully", "cart_item": cart_item.to_dict()}), 200
 
+@app.route('/categories', methods=['GET'])
+@jwt_required()
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([category.to_dict() for category in categories]), 200
 
 @app.route('/orders', methods=['GET'])
 @jwt_required()
