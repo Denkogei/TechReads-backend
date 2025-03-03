@@ -8,6 +8,9 @@ from flask_restful import Api
 import os
 from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category, CartItem
 from functools import wraps
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 
 app = Flask(__name__)
@@ -28,6 +31,11 @@ jwt = JWTManager(app)
 
 api = Api(app)
 
+cloudinary.config(
+    cloud_name="dn6e21gv1",
+    api_key="139938925355411",
+    api_secret="odRxBDq5BrzAweXxz-3lwjZNZ8M"
+)
 
 def token_required(f):
     @wraps(f)
@@ -161,19 +169,38 @@ def get_book_by_id(id):
 @app.route('/books', methods=['POST'])
 @jwt_required()
 def add_book():
-    data = request.get_json()
+    
+    title = request.form.get('title')
+    author = request.form.get('author')
+    description = request.form.get('description')
+    price = request.form.get('price')
+    stock = request.form.get('stock')
+    category_id = request.form.get('category_id')
+    
+    image = request.files.get('image')
+
+    if not image:
+        return jsonify({"error": "No image provided"}), 400
+
+    upload_result = cloudinary.uploader.upload(image)
+    
+    image_url = upload_result.get("secure_url")
+
     new_book = Book(
-        title=data['title'],
-        author=data['author'],
-        description=data['description'],
-        price=data['price'],
-        stock=data['stock'],
-        category_id=data['category_id'],
-        image_url=data['image_url'],
+        title=title,
+        author=author,
+        description=description,
+        price=price,
+        stock=stock,
+        category_id=category_id,
+        image_url=image_url  
     )
+
     db.session.add(new_book)
     db.session.commit()
+
     return jsonify(new_book.to_dict()), 201
+
 
 
 @app.route('/books/<int:book_id>', methods=['PUT'])
