@@ -305,6 +305,30 @@ def delete_cart_item(item_id):
 
     return jsonify({'message': 'Cart item deleted successfully'}), 200
 
+@app.route("/cart/<int:book_id>", methods=['PATCH'])
+@jwt_required()
+def update_cart_item(book_id):
+    user_id = get_jwt_identity()
+    data = request.get_json()
+
+
+    cart_item = CartItem.query.filter_by(user_id=user_id, book_id=book_id).first()
+
+
+    if not cart_item:
+        return jsonify({"error": 'Cart item not found'}), 404
+
+    if "quantity" in data:
+        new_quantity = data['"quantity']
+        if new_quantity < 1:
+            return jsonify({"error": "Quantity must be at least 1"}), 400
+           
+        cart_item.quantity = new_quantity
+
+    db.session.commit()
+
+    return jsonify({"message": "Cart updated successfully", "cart_item": cart_item.to_dict()}), 200
+
 
 @app.route('/orders', methods=['GET'])
 @jwt_required()
