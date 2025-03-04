@@ -405,16 +405,15 @@ def get_categories():
 @app.route('/orders', methods=['GET'])
 @jwt_required()
 def get_orders():
-    user_id = get_jwt_identity()
-    print("JWT Identity (user_id):", user_id)  # Debug print
-    orders = Order.query.filter_by(user_id=user_id).order_by(Order.datetime.desc()).all()
+    print("Fetching all orders...")  # Debug print
+    orders = Order.query.order_by(Order.datetime.desc()).all()
     print("Orders fetched from DB:", orders)  # Debug print
 
-    # Check if orders are being fetched correctly
     if not orders:
-        print("No orders found for user_id:", user_id)  # Debug print
+        print("No orders found in the database.")  # Debug print
 
     return jsonify([order.to_dict() for order in orders]), 200
+
 
 
 @app.route('/orders', methods=['POST'])
