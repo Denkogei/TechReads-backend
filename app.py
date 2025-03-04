@@ -32,9 +32,9 @@ jwt = JWTManager(app)
 api = Api(app)
 
 cloudinary.config(
-    cloud_name="dn6e21gv1",
-    api_key="139938925355411",
-    api_secret="odRxBDq5BrzAweXxz-3lwjZNZ8M"
+    cloud_name="dklgssxtk",
+    api_key="335984976478135",
+    api_secret="sOCQeXSIKcrlx3IRM_tOeVn-mrI"
 )
 
 def token_required(f):
@@ -169,38 +169,81 @@ def get_book_by_id(id):
 @app.route('/books', methods=['POST'])
 @jwt_required()
 def add_book():
+    data = request.get_json()
     
-    title = request.form.get('title')
-    author = request.form.get('author')
-    description = request.form.get('description')
-    price = request.form.get('price')
-    stock = request.form.get('stock')
-    category_id = request.form.get('category_id')
-    
-    image = request.files.get('image')
+    # Enhanced missing fields check
+    required_fields = ['title', 'author', 'price', 'stock', 'category_id', 'image_url']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return jsonify({
+            "error": "Missing required fields",
+            "missing": missing_fields
+        }), 400
 
-    if not image:
-        return jsonify({"error": "No image provided"}), 400
+    try:
+        # Flexible Cloudinary URL validation
+        if 'cloudinary.com' not in data['image_url']:
+            return jsonify({
+                "error": "Invalid image URL format",
+                "details": "Must be a valid Cloudinary URL"
+            }), 400
 
-    upload_result = cloudinary.uploader.upload(image)
-    
-    image_url = upload_result.get("secure_url")
+        # Numeric validation with error context
+        numeric_fields = {
+            'price': (float, 'Price must be a positive number'),
+            'stock': (int, 'Stock must be a non-negative integer'),
+            'category_id': (int, 'Category ID must be an integer')
+        }
+        
+        validated = {}
+        for field, (converter, error_msg) in numeric_fields.items():
+            try:
+                value = converter(data[field])
+                if field in ['price'] and value <= 0:
+                    raise ValueError(error_msg)
+                if field == 'stock' and value < 0:
+                    raise ValueError(error_msg)
+                validated[field] = value
+            except (ValueError, TypeError):
+                return jsonify({
+                    "error": "Validation error",
+                    "field": field,
+                    "message": error_msg
+                }), 400
 
-    new_book = Book(
-        title=title,
-        author=author,
-        description=description,
-        price=price,
-        stock=stock,
-        category_id=category_id,
-        image_url=image_url  
-    )
+        # Category existence check
+        if not Category.query.get(validated['category_id']):
+            return jsonify({
+                "error": "Invalid category",
+                "message": "Specified category does not exist"
+            }), 400
 
-    db.session.add(new_book)
-    db.session.commit()
+        # Book creation with error context
+        new_book = Book(
+            title=data['title'].strip(),
+            author=data['author'].strip(),
+            description=data.get('description', '').strip(),
+            price=validated['price'],
+            stock=validated['stock'],
+            category_id=validated['category_id'],
+            image_url=data['image_url'].strip()
+        )
+        
+        db.session.add(new_book)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Book added successfully",
+            "book": new_book.to_dict()
+        }), 201
 
-    return jsonify(new_book.to_dict()), 201
-
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error adding book: {str(e)}")
+        return jsonify({
+            "error": "Internal server error",
+            "details": "Failed to process book creation"
+        }), 500
 
 
 @app.route('/books/<int:book_id>', methods=['PUT'])

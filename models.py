@@ -53,24 +53,20 @@ class User(db.Model, SerializerMixin):
 class Book(db.Model):
     __tablename__ = 'books'
 
-
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     author = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(200), nullable=False)
-    price = db.Column(db.Integer, nullable=False)
+    description = db.Column(db.Text, nullable=False) 
+    price = db.Column(db.Float, nullable=False)       
     stock = db.Column(db.Integer, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     image_url = db.Column(db.String(500), nullable=False)
 
-
     order_items = db.relationship('OrderItem', backref='book', lazy=True)
     wishlist = db.relationship('Wishlist', backref='book', lazy=True)
 
-
     def __repr__(self):
-        return f'<Book {self.title}>, {self.author}>'
-
+        return f'<Book {self.title}, {self.author}>'
 
     def to_dict(self):
         return {
@@ -78,7 +74,7 @@ class Book(db.Model):
             'title': self.title,
             'author': self.author,
             'description': self.description,
-            'price': self.price,
+            'price': round(self.price, 2),  
             'stock': self.stock,
             'category_id': self.category_id,
             'image_url': self.image_url
