@@ -43,6 +43,48 @@ def get_mpesa_access_token():
     response_json = response.json()
     return response_json.get("access_token")
 
+
+
+@app.route('/mpesa/stkpush', methods=['POST'])
+
+def mpesa_stkpush():
+    data = request.get_json()
+    phone_number = data.get("phone_number")  
+    amount = data.get("amount")
+    order_id = data.get("order_id")
+
+
+    if not phone_number or not amount or not order_id:
+        return jsonify({"error": "Missing required fields"}), 400
+
+
+    access_token = get_mpesa_access_token()
+   
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
+
+
+    payload = {
+        "BusinessShortCode": MPESA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": amount,
+        "PartyA": phone_number,
+        "PartyB": MPESA_SHORTCODE,
+        "PhoneNumber": phone_number,
+        "CallBackURL": CALLBACK_URL,
+        "AccountReference": str(order_id),
+        "TransactionDesc": "Payment for TechReads Order"
+    }
+
+
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+    response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
+   
+    return response.json()
+
+
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
