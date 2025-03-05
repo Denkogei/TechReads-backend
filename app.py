@@ -11,6 +11,8 @@ from functools import wraps
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import requests
+import base64
 
 
 app = Flask(__name__)
@@ -36,6 +38,125 @@ cloudinary.config(
     api_key="335984976478135",
     api_secret="sOCQeXSIKcrlx3IRM_tOeVn-mrI"
 )
+
+# Mpesa Configurations
+MPESA_CONSUMER_KEY = ""
+MPESA_CONSUMER_SECRET = ""
+MPESA_SHORTCODE = ""
+MPESA_PASSKEY = ""
+MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"  
+CALLBACK_URL = "https://10a6-102-67-153-2.ngrok-free.app/mpesa/callback"
+
+def get_mpesa_access_token():
+    url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+    response = requests.get(url, auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET))
+    response_json = response.json()
+    return response_json.get("access_token")
+
+
+
+@app.route('/mpesa/stkpush', methods=['POST'])
+
+def mpesa_stkpush():
+    data = request.get_json()
+    phone_number = data.get("phone_number")  
+    amount = data.get("amount")
+    order_id = data.get("order_id")
+
+
+    if not phone_number or not amount or not order_id:
+        return jsonify({"error": "Missing required fields"}), 400
+
+
+    access_token = get_mpesa_access_token()
+   
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
+
+
+    payload = {
+        "BusinessShortCode": MPESA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": amount,
+        "PartyA": phone_number,
+        "PartyB": MPESA_SHORTCODE,
+        "PhoneNumber": phone_number,
+        "CallBackURL": CALLBACK_URL,
+        "AccountReference": str(order_id),
+        "TransactionDesc": "Payment for TechReads Order"
+    }
+
+
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+    response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
+   
+    return response.json()
+
+@app.route('/mpesa/callback', methods=['POST'])
+def mpesa_callback():
+    data = request.get_json()
+    print("Mpesa Callback Data:", data)  # Debugging output
+   
+    if not data:
+        return jsonify({"error": "Invalid callback data"}), 400
+
+
+    stk_callback = data.get("Body", {}).get("stkCallback", {})
+    result_code = stk_callback.get("ResultCode")
+    result_desc = stk_callback.get("ResultDesc")
+    metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
+
+
+    print("STK Callback Parsed:", stk_callback)  # Debugging output
+    print("Metadata:", metadata)  # Debugging output
+
+
+    if result_code == 0:
+        # Extract values safely
+        payment_details = {}
+        for item in metadata:
+            payment_details[item["Name"]] = item.get("Value")
+
+
+        print("Extracted Payment Details:", payment_details)  # Debugging output
+
+
+        order_id = payment_details.get("AccountReference")
+        transaction_id = payment_details.get("MpesaReceiptNumber")
+        amount = payment_details.get("Amount")
+
+
+        if not order_id or not transaction_id:
+            print("Missing order_id or transaction_id")  # Debugging output
+            return jsonify({"error": "Missing payment details"}), 400
+
+
+        # Update or insert payment in DB
+        payment = Payment.query.filter_by(order_id=order_id).first()
+        if payment:
+            payment.status = "Completed"
+            payment.transaction_id = transaction_id
+        else:
+            payment = Payment(
+                order_id=order_id,
+                payment_method="M-Pesa",
+                amount=amount,
+                status="Completed",
+                transaction_id=transaction_id,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(payment)
+
+
+        db.session.commit()
+  
+        return jsonify({"message": "Payment successful", "transaction_id": transaction_id}), 200
+    else:
+   
+        return jsonify({"error": "Payment failed", "description": result_desc}), 400
+    
 
 def token_required(f):
     @wraps(f)
