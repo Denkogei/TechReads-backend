@@ -37,6 +37,12 @@ MPESA_PASSKEY = ""
 MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"  
 CALLBACK_URL = "https://10a6-102-67-153-2.ngrok-free.app/mpesa/callback"
 
+def get_mpesa_access_token():
+    url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+    response = requests.get(url, auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET))
+    response_json = response.json()
+    return response_json.get("access_token")
+
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
