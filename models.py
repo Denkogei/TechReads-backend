@@ -199,7 +199,7 @@ class Payment(db.Model):
     payment_method = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(100), nullable=False)
-    transaction_id = db.Column(db.String(100), unique=True, nullable=False)
+    transaction_id = db.Column(db.String(100), unique=True, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False)
 
 

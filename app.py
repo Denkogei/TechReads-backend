@@ -8,6 +8,8 @@ from flask_restful import Api
 import os
 from models import db, User, Book, Order, OrderItem, Payment, Wishlist, Category, CartItem
 from functools import wraps
+import requests
+import base64
 
 app = Flask(__name__)
 
