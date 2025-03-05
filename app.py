@@ -29,6 +29,13 @@ jwt = JWTManager(app)
 
 api = Api(app)
 
+# Mpesa Configurations
+MPESA_CONSUMER_KEY = ""
+MPESA_CONSUMER_SECRET = ""
+MPESA_SHORTCODE = ""
+MPESA_PASSKEY = ""
+MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"  
+CALLBACK_URL = "https://10a6-102-67-153-2.ngrok-free.app/mpesa/callback"
 
 def token_required(f):
     @wraps(f)
