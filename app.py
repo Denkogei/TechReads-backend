@@ -536,6 +536,14 @@ def get_orders():
     return jsonify([order.to_dict() for order in orders]), 200
 
 
+@app.route('/orders/<int:id>/', methods=['GET'])
+@jwt_required()
+def get_orders_by_id(id):
+    order_list = Order.query.get(id)
+    if order_list:
+        return jsonify(order_list.to_dict()), 200
+    return jsonify({'error': 'Order not found'}), 404
+
 
 @app.route('/orders', methods=['POST'])
 @jwt_required()
