@@ -549,6 +549,16 @@ def update_order(order_id):
         current_user = get_jwt_identity()
         print(f"User {current_user} is updating order {order_id}")
 
+
+@app.route('/orders/<int:id>/', methods=['GET'])
+@jwt_required()
+def get_orders_by_id(id):
+    order_list = Order.query.get(id)
+    if order_list:
+        return jsonify(order_list.to_dict()), 200
+    return jsonify({'error': 'Order not found'}), 404
+
+
         order = Order.query.get(order_id)
         if not order:
             return jsonify({"error": "Order not found"}), 404
@@ -585,6 +595,7 @@ def send_order_update_email(email, order_id, new_status):
         print(f"Email sent to {email}, status: {response.status_code}")
     except Exception as e:
         print(f"Error sending email: {e}")
+
 
 @app.route('/orders', methods=['POST'])
 @jwt_required()
