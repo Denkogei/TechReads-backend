@@ -404,6 +404,7 @@ def edit_book(book_id):
 @app.route('/books/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
     book = Book.query.get(book_id)
+    print(id)
    
     if not book:
         return jsonify({"error": "Book not found"}), 404
@@ -554,6 +555,26 @@ def update_cart_item(book_id):
 
     return jsonify({"message": "Cart updated successfully", "cart_item": cart_item.to_dict()}), 200
 
+@app.route('/categories', methods=['POST'])
+@jwt_required()
+def add_category():
+    data = request.get_json()
+    name = data.get('name')
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+
+
+    existing_category = Category.query.filter_by(name=name).first()
+    if existing_category:
+        return jsonify({'error': 'Category already exists'}), 409
+
+
+    new_category = Category(name=name)
+    db.session.add(new_category)
+    db.session.commit()
+
+
+    return jsonify({'message': 'Category added successfully'}), 201
 
 @app.route('/categories', methods=['GET'])
 @jwt_required()
