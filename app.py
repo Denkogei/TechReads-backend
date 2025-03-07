@@ -33,8 +33,7 @@ jwt = JWTManager(app)
 
 api = Api(app)
 
-SENDGRID_API_KEY = "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"
-SENDGRID_SENDER_EMAIL = "dennis.kemboi2@student.moringaschool.com"
+
 
 cloudinary.config(
     cloud_name="dklgssxtk",
