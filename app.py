@@ -675,7 +675,20 @@ def update_order(order_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+def send_order_update_email(email, order_id, new_status):
+    try:
+        message = Mail(
+            from_email=SENDGRID_SENDER_EMAIL,
+            to_emails=email,
+            subject=f"Order {order_id} Update",
+            html_content=f"Your order status has been updated to: {new_status}"
+        )
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"Email sent to {email}, status: {response.status_code}")
+    except Exception as e:
+        print(f"Error sending email: {e}")
+    
 
 @app.route('/payments', methods=['POST'])
 @jwt_required()
