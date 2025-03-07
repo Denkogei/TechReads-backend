@@ -97,7 +97,7 @@ def mpesa_stkpush():
 @app.route('/mpesa/callback', methods=['POST'])
 def mpesa_callback():
     data = request.get_json()
-    print("Mpesa Callback Data:", data)  # Debugging output
+    print("Mpesa Callback Data:", data)  
    
     if not data:
         return jsonify({"error": "Invalid callback data"}), 400
@@ -109,8 +109,8 @@ def mpesa_callback():
     metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
 
 
-    print("STK Callback Parsed:", stk_callback)  # Debugging output
-    print("Metadata:", metadata)  # Debugging output
+    print("STK Callback Parsed:", stk_callback)  
+    print("Metadata:", metadata) 
 
 
     if result_code == 0:
@@ -129,7 +129,7 @@ def mpesa_callback():
 
 
         if not order_id or not transaction_id:
-            print("Missing order_id or transaction_id")  # Debugging output
+            print("Missing order_id or transaction_id") 
             return jsonify({"error": "Missing payment details"}), 400
 
 
@@ -207,7 +207,7 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
-    # Check if the email matches the admin email
+
     if email == "admin@gmail.com":
         # Get the user by email (admin account)
         user = User.query.filter_by(email=email).first()
@@ -229,7 +229,7 @@ def login():
 
         return jsonify({'error': 'Invalid credentials'}), 401
 
-    # If it's not the admin email, check for other users
+
     user = User.query.filter_by(email=email).first()
 
     # If user found and password is correct
@@ -302,14 +302,14 @@ def add_book():
         }), 400
 
     try:
-        # Flexible Cloudinary URL validation
+        
         if 'cloudinary.com' not in data['image_url']:
             return jsonify({
                 "error": "Invalid image URL format",
                 "details": "Must be a valid Cloudinary URL"
             }), 400
 
-        # Numeric validation with error context
+
         numeric_fields = {
             'price': (float, 'Price must be a positive number'),
             'stock': (int, 'Stock must be a non-negative integer'),
@@ -332,14 +332,14 @@ def add_book():
                     "message": error_msg
                 }), 400
 
-        # Category existence check
+        
         if not Category.query.get(validated['category_id']):
             return jsonify({
                 "error": "Invalid category",
                 "message": "Specified category does not exist"
             }), 400
 
-        # Book creation with error context
+        
         new_book = Book(
             title=data['title'].strip(),
             author=data['author'].strip(),
@@ -423,7 +423,7 @@ def add_to_wishlist(book_id):
 @app.route('/wishlist', methods=['GET'])
 @jwt_required()
 def get_wishlist():
-    current_user = get_jwt_identity()  # Ensure you're fetching the correct user
+    current_user = get_jwt_identity()  
     wishlist_items = Wishlist.query.filter_by(user_id=current_user).all()
     print("Fetched Wishlist:", wishlist_items)  # Debugging log
     return jsonify([item.to_dict() for item in wishlist_items]), 200
