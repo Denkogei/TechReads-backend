@@ -15,8 +15,9 @@ import requests
 import base64
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-
-
+from dotenv import load_dotenv
+import os
+load_dotenv()
 app = Flask(__name__)
 
 # Database configuration moved here
@@ -27,6 +28,13 @@ app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
 db.init_app(app)
 CORS(app, origins=['http://localhost:5173'])
+
+
+
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_SENDER_EMAIL = os.getenv("SENDGRID_SENDER_EMAIL")
+
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
