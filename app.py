@@ -14,7 +14,7 @@ import cloudinary.api
 import requests
 import base64
 from sendgrid import SendGridAPIClient
-from sendgrind.helpers.mail import Mail
+from sendgrid.helpers.mail import Mail
 
 
 app = Flask(__name__)
@@ -33,8 +33,9 @@ jwt = JWTManager(app)
 
 api = Api(app)
 
-SENDGRID_API_KEY = "YOUR_SENDGRID_API_KEY"
-SENDGRID_SENDER_EMAIL = "your_sender_email@example.com"
+
+
+
 
 cloudinary.config(
     cloud_name="dklgssxtk",
