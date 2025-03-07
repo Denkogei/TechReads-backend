@@ -33,6 +33,9 @@ jwt = JWTManager(app)
 
 api = Api(app)
 
+SENDGRID_API_KEY = "YOUR_SENDGRID_API_KEY"
+SENDGRID_SENDER_EMAIL = "your_sender_email@example.com"
+
 cloudinary.config(
     cloud_name="dklgssxtk",
     api_key="335984976478135",
@@ -641,6 +644,37 @@ def place_order():
 
     db.session.commit()
     return jsonify({'message': 'Order placed successfully'}), 201
+
+@app.route('/orders/<int:order_id>', methods=['PATCH'])
+@jwt_required()
+def update_order(order_id):
+    try:
+        current_user = get_jwt_identity()
+        print(f"User {current_user} is updating order {order_id}")
+
+        order = Order.query.get(order_id)
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+
+        data = request.get_json()
+        new_status = data.get("status")
+
+        if not new_status:
+            return jsonify({"error": "Missing status field"}), 400
+
+        old_status = order.status
+        order.status = new_status
+        db.session.commit()
+
+        # Send email notification
+        if old_status != new_status:
+            send_order_update_email(order.user.email, order_id, new_status)
+
+        return jsonify({"message": "Order status updated", "order": {"id": order.id, "status": order.status}}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 @app.route('/payments', methods=['POST'])
