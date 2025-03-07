@@ -35,7 +35,8 @@ api = Api(app)
 
 
 
-# Cloudinary configuration  
+
+
 cloudinary.config(
     cloud_name="dklgssxtk",
     api_key="335984976478135",
