@@ -27,6 +27,15 @@ app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
 db.init_app(app)
 CORS(app)
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_SENDER_EMAIL = os.getenv("SENDGRID_SENDER_EMAIL")
+
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
