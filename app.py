@@ -26,7 +26,7 @@ app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
 
 db.init_app(app)
-CORS(app)
+CORS(app, origins=['http://localhost:5173'])
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
