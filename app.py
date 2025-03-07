@@ -13,6 +13,9 @@ import cloudinary.uploader
 import cloudinary.api
 import requests
 import base64
+from sendgrid import SendGridAPIClient
+from sendgrind.helpers.mail import Mail
+
 
 app = Flask(__name__)
 
