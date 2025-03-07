@@ -34,7 +34,6 @@ Live link for the backend:
 
 ## Local deployment
 To run the project locally, one will need:
--
 - A basic understanding of how React and Flask work.
 - A code editor (preferably VS Code).
 - Python and pip for your backend dependencies.
