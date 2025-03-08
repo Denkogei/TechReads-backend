@@ -28,7 +28,7 @@ app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
 
 db.init_app(app)
-CORS(app, origins=['http://localhost:5173'])
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 
@@ -59,7 +59,7 @@ MPESA_CONSUMER_SECRET = ""
 MPESA_SHORTCODE = ""
 MPESA_PASSKEY = ""
 MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"  
-CALLBACK_URL = "https://10a6-102-67-153-2.ngrok-free.app/mpesa/callback"
+CALLBACK_URL = "https://e344-102-67-153-2.ngrok-free.app/mpesa/callback"
 
 
 def get_mpesa_access_token():
