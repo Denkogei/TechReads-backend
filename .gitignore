@@ -1,1 +1,4 @@
 TechReads.db
+.env
+__pycache__/
+instance/

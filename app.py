@@ -16,7 +16,9 @@ import base64
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
-
+from dotenv import load_dotenv
+import os
+load_dotenv()
 app = Flask(__name__)
 
 # Database configuration moved here
@@ -26,15 +28,23 @@ app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
 
 db.init_app(app)
-CORS(app)
+CORS(app, origins=['http://localhost:5173'])
+
+
+
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_SENDER_EMAIL = os.getenv("SENDGRID_SENDER_EMAIL")
+
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 api = Api(app)
 
-SENDGRID_API_KEY = "YOUR_SENDGRID_API_KEY"
-SENDGRID_SENDER_EMAIL = "your_sender_email@example.com"
+
+
+
 
 cloudinary.config(
     cloud_name="dklgssxtk",
@@ -410,6 +420,7 @@ def edit_book(book_id):
 @app.route('/books/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
     book = Book.query.get(book_id)
+    print(id)
    
     if not book:
         return jsonify({"error": "Book not found"}), 404
@@ -560,6 +571,26 @@ def update_cart_item(book_id):
 
     return jsonify({"message": "Cart updated successfully", "cart_item": cart_item.to_dict()}), 200
 
+@app.route('/categories', methods=['POST'])
+@jwt_required()
+def add_category():
+    data = request.get_json()
+    name = data.get('name')
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+
+
+    existing_category = Category.query.filter_by(name=name).first()
+    if existing_category:
+        return jsonify({'error': 'Category already exists'}), 409
+
+
+    new_category = Category(name=name)
+    db.session.add(new_category)
+    db.session.commit()
+
+
+    return jsonify({'message': 'Category added successfully'}), 201
 
 @app.route('/categories', methods=['GET'])
 @jwt_required()

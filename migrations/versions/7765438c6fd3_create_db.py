@@ -1,8 +1,8 @@
-"""Create tables
+"""create db
 
-Revision ID: cc8fbdaa7290
+Revision ID: 7765438c6fd3
 Revises: 
-Create Date: 2025-02-23 21:12:39.160738
+Create Date: 2025-03-06 23:51:30.400392
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cc8fbdaa7290'
+revision = '7765438c6fd3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -29,6 +29,7 @@ def upgrade():
     sa.Column('username', sa.String(length=100), nullable=False),
     sa.Column('email', sa.String(length=100), nullable=False),
     sa.Column('password', sa.String(length=100), nullable=False),
+    sa.Column('is_admin', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('username')
     )
@@ -36,12 +37,12 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=100), nullable=False),
     sa.Column('author', sa.String(length=100), nullable=False),
-    sa.Column('decsription', sa.String(length=200), nullable=False),
-    sa.Column('price', sa.Integer(), nullable=False),
+    sa.Column('description', sa.Text(), nullable=False),
+    sa.Column('price', sa.Float(), nullable=False),
     sa.Column('stock', sa.Integer(), nullable=False),
-    sa.Column('category', sa.String(length=100), nullable=False),
+    sa.Column('category_id', sa.Integer(), nullable=False),
     sa.Column('image_url', sa.String(length=500), nullable=False),
-    sa.ForeignKeyConstraint(['category'], ['categories.id'], ),
+    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('orders',
@@ -50,6 +51,15 @@ def upgrade():
     sa.Column('status', sa.String(length=100), nullable=False),
     sa.Column('total_price', sa.Integer(), nullable=False),
     sa.Column('datetime', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('cart_items',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('book_id', sa.Integer(), nullable=False),
+    sa.Column('quantity', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['book_id'], ['books.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -91,6 +101,7 @@ def downgrade():
     op.drop_table('wishlist')
     op.drop_table('payments')
     op.drop_table('order_items')
+    op.drop_table('cart_items')
     op.drop_table('orders')
     op.drop_table('books')
     op.drop_table('users')
