@@ -22,7 +22,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Database configuration moved here
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///TechReads.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "postgresql://techreads_bm2u_user:gbLzxCzIxYFLYmPYM59smyiElgxpivRG@dpg-cv67vblumphs73e2mce0-a.oregon-postgres.render.com/techreads_bm2u")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
