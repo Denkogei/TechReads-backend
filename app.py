@@ -15,7 +15,6 @@ import requests
 import base64
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -41,9 +40,6 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 api = Api(app)
-
-
-
 
 
 cloudinary.config(
@@ -214,18 +210,22 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
 
-    # Check if the email matches the admin email
-    if email == "admin@gmail.com":
-        # Get the user by email (admin account)
-        user = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(email=email).first()
 
+    if not user:
+        return jsonify({'error': 'Invalid credentials'}), 401
 
-        # If user found and password is correct
-        if user and bcrypt.check_password_hash(user.password, password):
+    # Debugging: Print stored password hash
+    print(f"Stored password hash: {user.password}")
+
+    try:
+        # Verify password (if the stored hash is valid)
+        if bcrypt.check_password_hash(user.password, password):
             access_token = create_access_token(identity=user.id, expires_delta=False)
             refresh_token = create_refresh_token(identity=user.id)
-
 
             return jsonify({
                 'access_token': access_token,
@@ -236,31 +236,8 @@ def login():
                     'id': user.id,
                 }
             }), 200
-
-
-        return jsonify({'error': 'Invalid credentials'}), 401
-
-
-    # If it's not the admin email, check for other users
-    user = User.query.filter_by(email=email).first()
-
-
-    # If user found and password is correct
-    if user and bcrypt.check_password_hash(user.password, password):
-        access_token = create_access_token(identity=user.id, expires_delta=False)
-        refresh_token = create_refresh_token(identity=user.id)
-
-
-        return jsonify({
-            'access_token': access_token,
-            'refresh_token': refresh_token,
-            'user': {
-                'name': user.name,
-                'email': user.email,
-                'id': user.id,
-            }
-        }), 200
-
+    except ValueError:
+        return jsonify({'error': 'Invalid password format. Please reset your password.'}), 500
 
     return jsonify({'error': 'Invalid credentials'}), 401
 
