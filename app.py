@@ -326,7 +326,7 @@ def add_book():
             }), 400
 
 
-        # Numeric validation with error context
+        
         numeric_fields = {
             'price': (float, 'Price must be a positive number'),
             'stock': (int, 'Stock must be a non-negative integer'),
@@ -350,7 +350,7 @@ def add_book():
                 }), 400
 
 
-        # Category existence check
+        
         if not Category.query.get(validated['category_id']):
             return jsonify({
                 "error": "Invalid category",
@@ -358,7 +358,7 @@ def add_book():
             }), 400
 
 
-        # Book creation with error context
+        
         new_book = Book(
             title=data['title'].strip(),
             author=data['author'].strip(),
@@ -456,9 +456,9 @@ def add_to_wishlist(book_id):
 @app.route('/wishlist', methods=['GET'])
 @jwt_required()
 def get_wishlist():
-    current_user = get_jwt_identity()  # Ensure you're fetching the correct user
+    current_user = get_jwt_identity()  
     wishlist_items = Wishlist.query.filter_by(user_id=current_user).all()
-    print("Fetched Wishlist:", wishlist_items)  # Debugging log
+    print("Fetched Wishlist:", wishlist_items)  
     return jsonify([item.to_dict() for item in wishlist_items]), 200
 
 
@@ -596,13 +596,13 @@ def get_categories():
 @app.route('/orders', methods=['GET'])
 @jwt_required()
 def get_orders():
-    print("Fetching all orders...")  # Debug print
+    print("Fetching all orders...")  
     orders = Order.query.order_by(Order.datetime.desc()).all()
-    print("Orders fetched from DB:", orders)  # Debug print
+    print("Orders fetched from DB:", orders)  
 
 
     if not orders:
-        print("No orders found in the database.")  # Debug print
+        print("No orders found in the database.")  
 
 
     return jsonify([order.to_dict() for order in orders]), 200
