@@ -30,7 +30,7 @@ This app lets you find various books that cover many topics in the technological
 - A web browser.
 
 Live link for the frontend: `https://techreadskenya.netlify.app/`
-Live link for the backend: 
+Live link for the backend:  `https://techreads-backend.onrender.com/`
 
 ## Local deployment
 To run the project locally, one will need:
