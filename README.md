@@ -39,8 +39,8 @@ To run the project locally, one will need:
 - Python and pip for your backend dependencies.
 
 ## Frontend Installation
-1. Clone this repository by clicking on the SSH and then copy the link [`frontend repo here`]
-2. Open your terminal and enter git clone [`name of repo here`]
+1. Clone this repository by clicking on the SSH and then copy the link `https://github.com/Denkogei/TechReads-frontend`
+2. Open your terminal and enter git clone `git@github.com:Denkogei/TechReads-frontend.git`
 3. Enter cd and the name of the file.
 4. Run npm install then npm start to download your dependencies and run the local server.
 
