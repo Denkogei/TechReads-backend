@@ -36,7 +36,7 @@ def seed_data():
                 name=fake.name(),
                 username=fake.user_name(),
                 email=fake.email(),
-                password='password',
+                password=fake.word(),
                 is_admin=random.choice([True, False])
             )
             users.append(user)
