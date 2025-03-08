@@ -54,12 +54,12 @@ cloudinary.config(
 
 
 # Mpesa Configurations
-MPESA_CONSUMER_KEY = ""
-MPESA_CONSUMER_SECRET = ""
-MPESA_SHORTCODE = ""
-MPESA_PASSKEY = ""
+MPESA_CONSUMER_KEY = "OCDbgdrGiNIL0mDamCH9svugb75iknjF62gngfBhp85nL2qL"
+MPESA_CONSUMER_SECRET = "zycZTX9sbpEcgRCVx8WPnbEyKAzGGdCyEvWAkqbDPxRMG8GAuYbAQRFfgbCROGrh"
+MPESA_SHORTCODE = "174379"
+MPESA_PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
 MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"  
-CALLBACK_URL = "https://e344-102-67-153-2.ngrok-free.app/mpesa/callback"
+CALLBACK_URL = "https://a3aa-197-237-129-213.ngrok-free.app/mpesa/callback"
 
 
 def get_mpesa_access_token():
