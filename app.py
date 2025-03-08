@@ -69,7 +69,13 @@ def get_mpesa_access_token():
     return response_json.get("access_token")
 
 
+
+
+
+
 @app.route('/mpesa/stkpush', methods=['POST'])
+
+
 def mpesa_stkpush():
     data = request.get_json()
     phone_number = data.get("phone_number")  
@@ -77,13 +83,20 @@ def mpesa_stkpush():
     order_id = data.get("order_id")
 
 
+
+
     if not phone_number or not amount or not order_id:
         return jsonify({"error": "Missing required fields"}), 400
+
+
+
 
     access_token = get_mpesa_access_token()
    
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
+
+
 
 
     payload = {
@@ -101,6 +114,8 @@ def mpesa_stkpush():
     }
 
 
+
+
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
     response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
    
@@ -110,8 +125,9 @@ def mpesa_stkpush():
 @app.route('/mpesa/callback', methods=['POST'])
 def mpesa_callback():
     data = request.get_json()
-    print("Mpesa Callback Data:", data)  # Debugging output
-   
+    print("Mpesa Callback Data:", data)  # Log everything
+
+
     if not data:
         return jsonify({"error": "Invalid callback data"}), 400
 
@@ -122,50 +138,28 @@ def mpesa_callback():
     metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
 
 
-    print("STK Callback Parsed:", stk_callback)  # Debugging output
-    print("Metadata:", metadata)  # Debugging output
+    print("STK Callback Parsed:", stk_callback)  
+    print("Metadata:", metadata)  
 
 
     if result_code == 0:
-        # Extract values safely
-        payment_details = {}
-        for item in metadata:
-            payment_details[item["Name"]] = item.get("Value")
-
-
-        print("Extracted Payment Details:", payment_details)  # Debugging output
+        payment_details = {item["Name"]: item.get("Value") for item in metadata}
 
 
         order_id = payment_details.get("AccountReference")
         transaction_id = payment_details.get("MpesaReceiptNumber")
         amount = payment_details.get("Amount")
 
+
         if not order_id or not transaction_id:
-            print("Missing order_id or transaction_id")  # Debugging output
+            print("Missing order_id or transaction_id")  
             return jsonify({"error": "Missing payment details"}), 400
 
-        # Update or insert payment in DB
-        payment = Payment.query.filter_by(order_id=order_id).first()
-        if payment:
-            payment.status = "Completed"
-            payment.transaction_id = transaction_id
-        else:
-            payment = Payment(
-                order_id=order_id,
-                payment_method="M-Pesa",
-                amount=amount,
-                status="Completed",
-                transaction_id=transaction_id,
-                created_at=datetime.utcnow()
-            )
-            db.session.add(payment)
 
-        db.session.commit()
- 
         return jsonify({"message": "Payment successful", "transaction_id": transaction_id}), 200
     else:
-   
         return jsonify({"error": "Payment failed", "description": result_desc}), 400
+
    
 
 def token_required(f):
