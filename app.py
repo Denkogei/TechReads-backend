@@ -15,6 +15,7 @@ import requests
 import base64
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+
 from dotenv import load_dotenv
 import os
 load_dotenv()
