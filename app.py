@@ -732,7 +732,7 @@ def send_order_update_email(email, order_id, new_status):
         print(f"Error sending email: {e}")
     
 
-@app.route('/payments', methods=['GET'])
+@app.route('/payments', methods=['POST'])
 @jwt_required()
 def make_payment():
     data = request.get_json()
@@ -751,6 +751,14 @@ def make_payment():
     db.session.commit()
 
     return jsonify({'message': 'Payment done successfully'}), 201
+    
+@app.route('/payments', methods=['GET'])
+@jwt_required()
+def get_payments():
+    payment_list = Payment.query.order_by(Payment.datetime.desc()).all()
+    if payment_list:
+        return jsonify([payment.to_dict() for payment in payment_list]), 200
+    return jsonify({'error': 'No payments found'}), 404
 
 
 @app.route('/refresh', methods=['POST'])
