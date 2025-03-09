@@ -21,9 +21,10 @@ load_dotenv()
 app = Flask(__name__)
 
 # Database configuration moved here
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///TechReads.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = "your_secret_key"
+
 
 
 db.init_app(app)
@@ -47,6 +48,7 @@ cloudinary.config(
     api_key="335984976478135",
     api_secret="sOCQeXSIKcrlx3IRM_tOeVn-mrI"
 )
+
 
 
 MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
