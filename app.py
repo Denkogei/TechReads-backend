@@ -66,7 +66,7 @@ def get_mpesa_access_token():
 
 
 
-
+#ignore this, attempting to push again
 
 
 @app.route('/mpesa/stkpush', methods=['POST'])
