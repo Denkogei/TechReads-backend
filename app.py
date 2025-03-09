@@ -146,16 +146,13 @@ def mpesa_stkpush():
 
 @app.route('/mpesa/callback', methods=['POST'])
 def mpesa_callback():
-    # Step 1: Parse the callback data from M-Pesa
     data = request.get_json()
-
-    # Log the received data for debugging
     print("Mpesa Callback Data:", data)
 
     if not data:
         return jsonify({"error": "Invalid callback data"}), 400
 
-    # Extract the STK callback information
+    # Extract STK callback information
     stk_callback = data.get("Body", {}).get("stkCallback", {})
     result_code = stk_callback.get("ResultCode")
     result_desc = stk_callback.get("ResultDesc")
@@ -164,31 +161,30 @@ def mpesa_callback():
     print("STK Callback Parsed:", stk_callback)
     print("Metadata:", metadata)
 
+    # If the transaction was successful (ResultCode 0)
     if result_code == 0:
-        # Step 2: Extract payment details from the callback metadata
+        # Extract relevant payment details from metadata
         payment_details = {item["Name"]: item.get("Value") for item in metadata}
-        order_id = payment_details.get("AccountReference")
         transaction_id = payment_details.get("MpesaReceiptNumber")
         amount = payment_details.get("Amount")
 
-        if not order_id or not transaction_id:
-            print("Missing order_id or transaction_id")
+        if not transaction_id:
+            print("Missing transaction_id")
             return jsonify({"error": "Missing payment details"}), 400
 
-        # Step 3: Retrieve the order record from the database
-        order = Order.query.filter_by(id=order_id).first()
-
-        if not order:
-            return jsonify({"error": "Order not found"}), 404
-
-        # Step 4: Update the order status to 'Paid' and save the payment record
-        order.status = "Paid"
-        order.total_price = amount  # Optional: ensure the total price matches the amount paid
+        # Create a new Order in the database
+        new_order = Order(
+            user_id=1,  # Replace with the appropriate user_id if needed
+            status="Paid",
+            total_price=amount,
+            datetime=datetime.now()
+        )
+        db.session.add(new_order)
         db.session.commit()
 
-        # Create a new payment record
+        # Save payment details to the Payment table
         new_payment = Payment(
-            order_id=order_id,
+            order_id=new_order.id,
             payment_method="Mpesa",
             status="Completed",
             transaction_id=transaction_id,
@@ -197,11 +193,14 @@ def mpesa_callback():
         db.session.add(new_payment)
         db.session.commit()
 
-        # Respond with a success message
+        # Respond with success message
         return jsonify({"message": "Payment successful", "transaction_id": transaction_id}), 200
-    else:
-        # Handle cases where the payment failed
-        return jsonify({"error": "Payment failed", "description": result_desc}), 400
+
+    # If the transaction was not successful
+    return jsonify({"error": "Payment failed", "description": result_desc}), 400
+
+
+
 
 
 
