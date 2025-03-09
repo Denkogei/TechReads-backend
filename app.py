@@ -62,11 +62,9 @@ CALLBACK_URL = os.getenv("CALLBACK_URL")
 def get_mpesa_access_token():
     url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
     
-    # Hardcoded consumer key and secret
     consumer_key = "DGnrLBUtUoke80CT6aFwD9hmVmTpT6ArW0vVxAmbekm2ApGn"
     consumer_secret = "88JoyDdIwn41HDixfeZqoQL3yMl9FGv6m5FtOZAqtFqWNE5XuA9d3GeaAP8h3erK"
     
-    # Generate base64 encoded authorization header
     auth_string = f"{consumer_key}:{consumer_secret}"
     auth_encoded = base64.b64encode(auth_string.encode()).decode()
 
@@ -76,80 +74,73 @@ def get_mpesa_access_token():
     }
 
     response = requests.get(url, headers=headers)
-
-    # Debugging output
-    print("Request URL:", url)
-    print("Authorization Header:", headers["Authorization"])
-    print("Response Status Code:", response.status_code)
-    print("Response Text:", response.text)
-
-    if response.status_code != 200:
-        print(f"Failed to get access token: {response.status_code} - {response.text}")
-        return None
-
-    try:
-        response_json = response.json()
-        access_token = response_json.get("access_token")
-        if not access_token:
-            print(f"Access token missing in response: {response_json}")
-        return access_token
-
-    except ValueError:
-        print(f"Invalid JSON response: {response.text}")
-        return None
-
-
+    response_json = response.json()
+    return response_json.get("access_token")
 
 
 
 @app.route('/mpesa/stkpush', methods=['POST'])
 def mpesa_stkpush():
-    try:
-        print("Received STK Push request")
-        data = request.get_json()
-        if not data:
-            print("No JSON data")
-            return jsonify({"error": "No JSON data provided"}), 400
+    # Hardcoded MPESA credentials and API details
+    MPESA_CONSUMER_KEY = "DGnrLBUtUoke80CT6aFwD9hmVmTpT6ArW0vVxAmbekm2ApGn"
+    MPESA_CONSUMER_SECRET = "88JoyDdIwn41HDixfeZqoQL3yMl9FGv6m5FtOZAqtFqWNE5XuA9d3GeaAP8h3erK"
+    MPESA_SHORTCODE = "174379"
+    MPESA_PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+    MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"
+    CALLBACK_URL = "https://techreads-backend.onrender.com/mpesa/callback"
 
-        phone_number = data.get("phone_number")
-        amount = data.get("amount")
-        order_id = data.get("order_id")
-        print(f"Input: phone={phone_number}, amount={amount}, order_id={order_id}")
+    # Fetch the request data
+    data = request.get_json()
+    phone_number = data.get("phone_number")
+    amount = data.get("amount")
+    order_id = data.get("order_id")
 
-        if not all([phone_number, amount, order_id]):
-            print("Missing fields")
-            return jsonify({"error": "Missing required fields"}), 400
+    # Validate required fields
+    if not phone_number or not amount or not order_id:
+         return jsonify({"error": "Missing required fields"}), 400
 
-        access_token = get_mpesa_access_token()
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
-        print("Generated timestamp and password")
+    # Generate access token
+    auth_url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+    auth_response = requests.get(auth_url, auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET))
+    access_token = auth_response.json().get("access_token")
 
-        payload = {
-            "BusinessShortCode": MPESA_SHORTCODE,
-            "Password": password,
-            "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
-            "Amount": str(amount),  # Ensure string
-            "PartyA": phone_number,
-            "PartyB": MPESA_SHORTCODE,
-            "PhoneNumber": phone_number,
-            "CallBackURL": CALLBACK_URL,
-            "AccountReference": str(order_id),
-            "TransactionDesc": "Payment for TechReads Order"
-        }
-        print("Payload:", payload)
+    if not access_token:
+        return jsonify({"error": "Failed to get access token"}), 400
 
-        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-        response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
-        print("STK response:", response.status_code, response.text)
-        response.raise_for_status()
+    # Generate password and timestamp
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
 
-        return jsonify({"message": "Payment request sent", "response": response.json()})
+    # Prepare payload for STK push
+    payload = {
+        "BusinessShortCode": MPESA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": amount,
+        "PartyA": phone_number,
+        "PartyB": MPESA_SHORTCODE,
+        "PhoneNumber": phone_number,
+        "CallBackURL": CALLBACK_URL,
+        "AccountReference": str(order_id),
+        "TransactionDesc": "Payment for TechReads Order"
+    }
 
-    except Exception as e:
-        print(f"STK Push error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+    # Send STK push request
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
+
+    # Return the response from Safaricom
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return jsonify({"error": f"{response.status_code} {response.reason}", "details": response.text}), 400
+
+
+
 
 
 
