@@ -50,18 +50,13 @@ cloudinary.config(
 )
 
 
-
-MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
-MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
-MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
-MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
-MPESA_BASE_URL = os.getenv("MPESA_BASE_URL", "https://sandbox.safaricom.co.ke")  
-CALLBACK_URL = os.getenv("CALLBACK_URL")
-
-
 def get_mpesa_access_token():
-    url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
-    auth_string = f"{MPESA_CONSUMER_KEY}:{MPESA_CONSUMER_SECRET}"
+    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    
+    consumer_key = "DGnrLBUtUoke80CT6aFwD9hmVmTpT6ArW0vVxAmbekm2ApGn"
+    consumer_secret = "88JoyDdIwn41HDixfeZqoQL3yMl9FGv6m5FtOZAqtFqWNE5XuA9d3GeaAP8h3erK"
+    
+    auth_string = f"{consumer_key}:{consumer_secret}"
     auth_encoded = base64.b64encode(auth_string.encode()).decode()
 
     headers = {
@@ -70,116 +65,132 @@ def get_mpesa_access_token():
     }
 
     response = requests.get(url, headers=headers)
-
-    
-    if response.status_code != 200:
-        print(f"Failed to get access token: {response.status_code} - {response.text}")
-        return None
-
-    try:
-        response_json = response.json()
-        access_token = response_json.get("access_token")
-
-        if not access_token:
-            print(f"Access token missing in response: {response_json}")
-        return access_token
-
-    except ValueError:
-        print(f"Invalid JSON response: {response.text}")
-        return None
-
+    response_json = response.json()
+    return response_json.get("access_token")
 
 
 @app.route('/mpesa/stkpush', methods=['POST'])
 def mpesa_stkpush():
-    try:
-        print("Received STK Push request")
-        data = request.get_json()
-        if not data:
-            print("No JSON data")
-            return jsonify({"error": "No JSON data provided"}), 400
+    
+    MPESA_CONSUMER_KEY = "DGnrLBUtUoke80CT6aFwD9hmVmTpT6ArW0vVxAmbekm2ApGn"
+    MPESA_CONSUMER_SECRET = "88JoyDdIwn41HDixfeZqoQL3yMl9FGv6m5FtOZAqtFqWNE5XuA9d3GeaAP8h3erK"
+    MPESA_SHORTCODE = "174379"
+    MPESA_PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+    MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"
+    CALLBACK_URL = "https://techreads-backend.onrender.com/mpesa/callback"
 
-        phone_number = data.get("phone_number")
-        amount = data.get("amount")
-        order_id = data.get("order_id")
-        print(f"Input: phone={phone_number}, amount={amount}, order_id={order_id}")
+    
+    data = request.get_json()
+    phone_number = data.get("phone_number")
+    amount = data.get("amount")
+    order_id = data.get("order_id")
 
-        if not all([phone_number, amount, order_id]):
-            print("Missing fields")
-            return jsonify({"error": "Missing required fields"}), 400
+    
+    if not phone_number or not amount or not order_id:
+         return jsonify({"error": "Missing required fields"}), 400
 
-        access_token = get_mpesa_access_token()
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
-        print("Generated timestamp and password")
+    
+    auth_url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+    auth_response = requests.get(auth_url, auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET))
+    access_token = auth_response.json().get("access_token")
 
-        payload = {
-            "BusinessShortCode": MPESA_SHORTCODE,
-            "Password": password,
-            "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
-            "Amount": str(amount),  
-            "PartyA": phone_number,
-            "PartyB": MPESA_SHORTCODE,
-            "PhoneNumber": phone_number,
-            "CallBackURL": CALLBACK_URL,
-            "AccountReference": str(order_id),
-            "TransactionDesc": "Payment for TechReads Order"
-        }
-        print("Payload:", payload)
+    if not access_token:
+        return jsonify({"error": "Failed to get access token"}), 400
 
-        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-        response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
-        print("STK response:", response.status_code, response.text)
-        response.raise_for_status()
+    
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
 
-        return jsonify({"message": "Payment request sent", "response": response.json()})
+    
+    payload = {
+        "BusinessShortCode": MPESA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": amount,
+        "PartyA": phone_number,
+        "PartyB": MPESA_SHORTCODE,
+        "PhoneNumber": phone_number,
+        "CallBackURL": CALLBACK_URL,
+        "AccountReference": str(order_id),
+        "TransactionDesc": "Payment for TechReads Order"
+    }
 
-    except Exception as e:
-        print(f"STK Push error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+    
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
+
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return jsonify({"error": f"{response.status_code} {response.reason}", "details": response.text}), 400
 
 
 
 @app.route('/mpesa/callback', methods=['POST'])
 def mpesa_callback():
     data = request.get_json()
-    print("Mpesa Callback Data:", data)  
-
+    print("Mpesa Callback Data:", data)
 
     if not data:
         return jsonify({"error": "Invalid callback data"}), 400
-
 
     stk_callback = data.get("Body", {}).get("stkCallback", {})
     result_code = stk_callback.get("ResultCode")
     result_desc = stk_callback.get("ResultDesc")
     metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
 
+    print("STK Callback Parsed:", stk_callback)
+    print("Metadata:", metadata)
 
-    print("STK Callback Parsed:", stk_callback)  
-    print("Metadata:", metadata)  
-
-
+    
     if result_code == 0:
+        
         payment_details = {item["Name"]: item.get("Value") for item in metadata}
-
-
-        order_id = payment_details.get("AccountReference")
         transaction_id = payment_details.get("MpesaReceiptNumber")
         amount = payment_details.get("Amount")
 
-
-        if not order_id or not transaction_id:
-            print("Missing order_id or transaction_id")  
+        if not transaction_id:
+            print("Missing transaction_id")
             return jsonify({"error": "Missing payment details"}), 400
 
+        
+        try:
+            amount = int(float(amount))
+        except ValueError:
+            return jsonify({"error": "Invalid amount"}), 400
 
+        
+        new_order = Order(
+            user_id=1,  
+            status="Paid",
+            total_price=amount,
+            datetime=datetime.now()
+        )
+        db.session.add(new_order)
+        db.session.commit()
+
+        
+        new_payment = Payment(
+            order_id=new_order.id,
+            payment_method="Mpesa",
+            amount=amount,  
+            status="Completed",
+            transaction_id=transaction_id,
+            created_at=datetime.now()
+        )
+        db.session.add(new_payment)
+        db.session.commit()
+
+        
         return jsonify({"message": "Payment successful", "transaction_id": transaction_id}), 200
-    else:
-        return jsonify({"error": "Payment failed", "description": result_desc}), 400
 
-   
+    return jsonify({"error": "Payment failed", "description": result_desc}), 400
+
 
 def token_required(f):
     @wraps(f)
@@ -706,7 +717,7 @@ def send_order_update_email(email, order_id, new_status):
         response = sg.send(message)
         print(f"Email sent to {email}, status: {response.status_code}")
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"Error sending email: {e}")
     
 
 @app.route('/payments', methods=['POST'])
@@ -728,6 +739,14 @@ def make_payment():
     db.session.commit()
 
     return jsonify({'message': 'Payment done successfully'}), 201
+    
+@app.route('/payments', methods=['GET'])
+@jwt_required()
+def get_payments():
+    payment_list = Payment.query.order_by(Payment.created_at.desc()).all()  
+    if payment_list:
+        return jsonify([payment.to_dict() for payment in payment_list]), 200
+    return jsonify({'error': 'No payments found'}), 404
 
 
 @app.route('/refresh', methods=['POST'])
@@ -740,4 +759,5 @@ def refresh():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5555)
+
 
