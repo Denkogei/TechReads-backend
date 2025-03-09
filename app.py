@@ -49,12 +49,12 @@ cloudinary.config(
 )
 
 
-MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
-MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
-MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
-MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
-MPESA_BASE_URL = os.getenv("MPESA_BASE_URL", "https://sandbox.safaricom.co.ke")  
-CALLBACK_URL = os.getenv("CALLBACK_URL")
+MPESA_CONSUMER_KEY= "DGnrLBUtUoke80CT6aFwD9hmVmTpT6ArW0vVxAmbekm2ApGn",
+MPESA_CONSUMER_SECRET= "88JoyDdIwn41HDixfeZqoQL3yMl9FGv6m5FtOZAqtFqWNE5XuA9d3GeaAP8h3erK",
+MPESA_SHORTCODE= "174379",
+MPESA_PASSKEY= "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
+MPESA_BASE_URL= "https://sandbox.safaricom.co.ke",
+CALLBACK_URL= "https://techreads-backend.onrender.com/mpesa/callback"
 
 
 def get_mpesa_access_token():
