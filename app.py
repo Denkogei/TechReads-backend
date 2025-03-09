@@ -58,7 +58,7 @@ MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
 MPESA_BASE_URL = os.getenv("MPESA_BASE_URL", "https://sandbox.safaricom.co.ke")  
 CALLBACK_URL = os.getenv("CALLBACK_URL")
 
-
+#testing
 def get_mpesa_access_token():
     try:
         url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
