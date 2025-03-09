@@ -28,7 +28,7 @@ app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
 
 db.init_app(app)
-CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5173", "https://techreadsafrica.netlify.app" "http://localhost:5173"]}})
+CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5173", "https://techreadsafrica.netlify.app", "http://localhost:5173"]}})
 
 
 
