@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 sqlalchemy = "*"
-flask = "*"
 sqlalchemy-serializer = "*"
 flask-migrate = "*"
 flask-cors = "*"
@@ -17,6 +16,7 @@ faker = "*"
 cloudinary = "*"
 requests = "*"
 sendgrid = "*"
+flask = "*"
 
 [dev-packages]
 

@@ -21,9 +21,10 @@ load_dotenv()
 app = Flask(__name__)
 
 # Database configuration moved here
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///TechReads.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = "your_secret_key"
+
 
 
 db.init_app(app)
@@ -49,12 +50,13 @@ cloudinary.config(
 )
 
 
+
 MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
 MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
 MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
 MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
 MPESA_BASE_URL = os.getenv("MPESA_BASE_URL", "https://sandbox.safaricom.co.ke")  
-CALLBACK_URL = os.getenv("CALLBACK_URL")
+CALLBACK_URL = os.getenv("CALLBACK_URL"
 
 
 def get_mpesa_access_token():
