@@ -755,7 +755,7 @@ def make_payment():
 @app.route('/payments', methods=['GET'])
 @jwt_required()
 def get_payments():
-    payment_list = Payment.query.order_by(Payment.datetime.desc()).all()
+    payment_list = Payment.query.order_by(Payment.created_at.desc()).all()  
     if payment_list:
         return jsonify([payment.to_dict() for payment in payment_list]), 200
     return jsonify({'error': 'No payments found'}), 404
