@@ -11,6 +11,7 @@ This app was a collaborative effort between our fellow classmates listen below:
 This app lets you find various books that cover many topics in the technological field, it was made using React for the frontend and Flask for the backend. Users can browse, view, and purchase books from this website.
 
 ## Screenshot
+![TechReads](./frontpage.jpg)
 
 
 
@@ -61,7 +62,7 @@ Below you can find the contacts of the people who worked on this incase you need
 # License
 MIT License
 
-Copyright © 2025
+Copyright © 2025 Nursamedin Dualle, Dennis Kemboi, Yakubu Esuza, Mary Gichana
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
