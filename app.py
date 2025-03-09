@@ -49,13 +49,12 @@ cloudinary.config(
 )
 
 
-# Mpesa Configurations
-MPESA_CONSUMER_KEY = ""
-MPESA_CONSUMER_SECRET = ""
-MPESA_SHORTCODE = ""
-MPESA_PASSKEY = ""
-MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"  
-CALLBACK_URL = "https://e344-102-67-153-2.ngrok-free.app/mpesa/callback"
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
+MPESA_BASE_URL = os.getenv("MPESA_BASE_URL", "https://sandbox.safaricom.co.ke")  
+CALLBACK_URL = os.getenv("CALLBACK_URL")
 
 
 def get_mpesa_access_token():
@@ -65,8 +64,6 @@ def get_mpesa_access_token():
     return response_json.get("access_token")
 
 
-
-#ignore this, attempting to push again
 
 
 @app.route('/mpesa/stkpush', methods=['POST'])
@@ -121,7 +118,7 @@ def mpesa_stkpush():
 @app.route('/mpesa/callback', methods=['POST'])
 def mpesa_callback():
     data = request.get_json()
-    print("Mpesa Callback Data:", data)  # Log everything
+    print("Mpesa Callback Data:", data)  
 
 
     if not data:
@@ -218,11 +215,10 @@ def login():
     if not user:
         return jsonify({'error': 'Invalid credentials'}), 401
 
-    # Debugging: Print stored password hash
+    
     print(f"Stored password hash: {user.password}")
 
     try:
-        # Verify password (if the stored hash is valid)
         if bcrypt.check_password_hash(user.password, password):
             access_token = create_access_token(identity=user.id, expires_delta=False)
             refresh_token = create_refresh_token(identity=user.id)
@@ -284,7 +280,7 @@ def get_book_by_id(id):
 def add_book():
     data = request.get_json()
    
-    # Enhanced missing fields check
+    
     required_fields = ['title', 'author', 'price', 'stock', 'category_id', 'image_url']
     missing_fields = [field for field in required_fields if field not in data]
     if missing_fields:
@@ -295,7 +291,6 @@ def add_book():
 
 
     try:
-        # Flexible Cloudinary URL validation
         if 'cloudinary.com' not in data['image_url']:
             return jsonify({
                 "error": "Invalid image URL format",
@@ -303,7 +298,6 @@ def add_book():
             }), 400
 
 
-        # Numeric validation with error context
         numeric_fields = {
             'price': (float, 'Price must be a positive number'),
             'stock': (int, 'Stock must be a non-negative integer'),
@@ -327,7 +321,6 @@ def add_book():
                 }), 400
 
 
-        # Category existence check
         if not Category.query.get(validated['category_id']):
             return jsonify({
                 "error": "Invalid category",
@@ -335,7 +328,6 @@ def add_book():
             }), 400
 
 
-        # Book creation with error context
         new_book = Book(
             title=data['title'].strip(),
             author=data['author'].strip(),
@@ -433,9 +425,9 @@ def add_to_wishlist(book_id):
 @app.route('/wishlist', methods=['GET'])
 @jwt_required()
 def get_wishlist():
-    current_user = get_jwt_identity()  # Ensure you're fetching the correct user
+    current_user = get_jwt_identity()  
     wishlist_items = Wishlist.query.filter_by(user_id=current_user).all()
-    print("Fetched Wishlist:", wishlist_items)  # Debugging log
+    print("Fetched Wishlist:", wishlist_items)  
     return jsonify([item.to_dict() for item in wishlist_items]), 200
 
 
@@ -573,13 +565,13 @@ def get_categories():
 @app.route('/orders', methods=['GET'])
 @jwt_required()
 def get_orders():
-    print("Fetching all orders...")  # Debug print
+    print("Fetching all orders...")  
     orders = Order.query.order_by(Order.datetime.desc()).all()
-    print("Orders fetched from DB:", orders)  # Debug print
+    print("Orders fetched from DB:", orders)  
 
 
     if not orders:
-        print("No orders found in the database.")  # Debug print
+        print("No orders found in the database.")  
 
 
     return jsonify([order.to_dict() for order in orders]), 200
@@ -668,7 +660,6 @@ def update_order(order_id):
         order.status = new_status
         db.session.commit()
 
-        # Send email notification
         if old_status != new_status:
             send_order_update_email(order.user.email, order_id, new_status)
 
