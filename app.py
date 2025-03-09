@@ -80,54 +80,54 @@ def get_mpesa_access_token():
         raise Exception("Invalid auth response format")
 
 
-# @app.route('/mpesa/stkpush', methods=['POST'])
-# def mpesa_stkpush():
-#     try:
-#         print("Received STK Push request")
-#         data = request.get_json()
-#         if not data:
-#             print("No JSON data")
-#             return jsonify({"error": "No JSON data provided"}), 400
+@app.route('/mpesa/stkpush', methods=['POST'])
+def mpesa_stkpush():
+    try:
+        print("Received STK Push request")
+        data = request.get_json()
+        if not data:
+            print("No JSON data")
+            return jsonify({"error": "No JSON data provided"}), 400
 
-#         phone_number = data.get("phone_number")
-#         amount = data.get("amount")
-#         order_id = data.get("order_id")
-#         print(f"Input: phone={phone_number}, amount={amount}, order_id={order_id}")
+        phone_number = data.get("phone_number")
+        amount = data.get("amount")
+        order_id = data.get("order_id")
+        print(f"Input: phone={phone_number}, amount={amount}, order_id={order_id}")
 
-#         if not all([phone_number, amount, order_id]):
-#             print("Missing fields")
-#             return jsonify({"error": "Missing required fields"}), 400
+        if not all([phone_number, amount, order_id]):
+            print("Missing fields")
+            return jsonify({"error": "Missing required fields"}), 400
 
-#         access_token = get_mpesa_access_token()
-#         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-#         password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
-#         print("Generated timestamp and password")
+        access_token = get_mpesa_access_token()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
+        print("Generated timestamp and password")
 
-#         payload = {
-#             "BusinessShortCode": MPESA_SHORTCODE,
-#             "Password": password,
-#             "Timestamp": timestamp,
-#             "TransactionType": "CustomerPayBillOnline",
-#             "Amount": str(amount),  # Ensure string
-#             "PartyA": phone_number,
-#             "PartyB": MPESA_SHORTCODE,
-#             "PhoneNumber": phone_number,
-#             "CallBackURL": CALLBACK_URL,
-#             "AccountReference": str(order_id),
-#             "TransactionDesc": "Payment for TechReads Order"
-#         }
-#         print("Payload:", payload)
+        payload = {
+            "BusinessShortCode": MPESA_SHORTCODE,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": str(amount),  # Ensure string
+            "PartyA": phone_number,
+            "PartyB": MPESA_SHORTCODE,
+            "PhoneNumber": phone_number,
+            "CallBackURL": CALLBACK_URL,
+            "AccountReference": str(order_id),
+            "TransactionDesc": "Payment for TechReads Order"
+        }
+        print("Payload:", payload)
 
-#         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-#         response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
-#         print("STK response:", response.status_code, response.text)
-#         response.raise_for_status()
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
+        print("STK response:", response.status_code, response.text)
+        response.raise_for_status()
 
-#         return jsonify({"message": "Payment request sent", "response": response.json()})
+        return jsonify({"message": "Payment request sent", "response": response.json()})
 
-#     except Exception as e:
-#         print(f"STK Push error: {str(e)}")
-#         return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        print(f"STK Push error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 
 
