@@ -732,7 +732,7 @@ def send_order_update_email(email, order_id, new_status):
         print(f"Error sending email: {e}")
     
 
-@app.route('/payments', methods=['POST'])
+@app.route('/payments', methods=['GET'])
 @jwt_required()
 def make_payment():
     data = request.get_json()
