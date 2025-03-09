@@ -71,7 +71,7 @@ def get_mpesa_access_token():
 
     response = requests.get(url, headers=headers)
 
-    # Log response details for debugging
+    
     if response.status_code != 200:
         print(f"Failed to get access token: {response.status_code} - {response.text}")
         return None
@@ -118,7 +118,7 @@ def mpesa_stkpush():
             "Password": password,
             "Timestamp": timestamp,
             "TransactionType": "CustomerPayBillOnline",
-            "Amount": str(amount),  # Ensure string
+            "Amount": str(amount),  
             "PartyA": phone_number,
             "PartyB": MPESA_SHORTCODE,
             "PhoneNumber": phone_number,
