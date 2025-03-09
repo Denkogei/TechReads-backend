@@ -60,8 +60,14 @@ CALLBACK_URL = os.getenv("CALLBACK_URL")
 
 
 def get_mpesa_access_token():
-    url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
-    auth_string = f"{MPESA_CONSUMER_KEY}:{MPESA_CONSUMER_SECRET}"
+    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    
+    # Hardcoded consumer key and secret
+    consumer_key = "DGnrLBUtUoke80CT6aFwD9hmVmTpT6ArW0vVxAmbekm2ApGn"
+    consumer_secret = "88JoyDdIwn41HDixfeZqoQL3yMl9FGv6m5FtOZAqtFqWNE5XuA9d3GeaAP8h3erK"
+    
+    # Generate base64 encoded authorization header
+    auth_string = f"{consumer_key}:{consumer_secret}"
     auth_encoded = base64.b64encode(auth_string.encode()).decode()
 
     headers = {
@@ -71,7 +77,12 @@ def get_mpesa_access_token():
 
     response = requests.get(url, headers=headers)
 
-    # Log response details for debugging
+    # Debugging output
+    print("Request URL:", url)
+    print("Authorization Header:", headers["Authorization"])
+    print("Response Status Code:", response.status_code)
+    print("Response Text:", response.text)
+
     if response.status_code != 200:
         print(f"Failed to get access token: {response.status_code} - {response.text}")
         return None
@@ -79,7 +90,6 @@ def get_mpesa_access_token():
     try:
         response_json = response.json()
         access_token = response_json.get("access_token")
-
         if not access_token:
             print(f"Access token missing in response: {response_json}")
         return access_token
@@ -87,6 +97,8 @@ def get_mpesa_access_token():
     except ValueError:
         print(f"Invalid JSON response: {response.text}")
         return None
+
+
 
 
 
