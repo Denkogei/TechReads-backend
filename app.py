@@ -146,12 +146,15 @@ def mpesa_stkpush():
 
 @app.route('/mpesa/callback', methods=['POST'])
 def mpesa_callback():
+    # Get the JSON data sent by Safaricom
     data = request.get_json()
     print("Mpesa Callback Data:", data)
 
+    # Ensure the data is valid
     if not data:
         return jsonify({"error": "Invalid callback data"}), 400
 
+    # Extract the STK callback information
     stk_callback = data.get("Body", {}).get("stkCallback", {})
     result_code = stk_callback.get("ResultCode")
     result_desc = stk_callback.get("ResultDesc")
@@ -161,37 +164,47 @@ def mpesa_callback():
     print("Metadata:", metadata)
 
     if result_code == 0:
-        # Extract payment details
+        # Successful payment
+        # Extract payment details from callback metadata
         payment_details = {item["Name"]: item.get("Value") for item in metadata}
         order_id = payment_details.get("AccountReference")
         transaction_id = payment_details.get("MpesaReceiptNumber")
         amount = payment_details.get("Amount")
 
+        # Check if we have the necessary information
         if not order_id or not transaction_id:
             print("Missing order_id or transaction_id")
             return jsonify({"error": "Missing payment details"}), 400
 
         # Fetch the order from the database using the order_id
         order = Order.query.filter_by(id=order_id).first()
-        
+
+        # Handle the case where the order isn't found
         if not order:
             return jsonify({"error": "Order not found"}), 404
 
-        # Update the order status and create the payment record in a single transaction
+        # Update the order status to 'Paid' and save the transaction
         order.status = "Paid"
-        new_payment = Payment(
-            order_id=order_id,
-            payment_method="Mpesa",
-            status="Completed",
-            transaction_id=transaction_id,
-            created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        )
-        db.session.add(new_payment)
         db.session.commit()
 
+        # Optionally, save additional payment details into a separate Payment table if desired
+        # Example:
+        # new_payment = Payment(
+        #     order_id=order_id,
+        #     payment_method="Mpesa",
+        #     status="Completed",
+        #     transaction_id=transaction_id,
+        #     created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # )
+        # db.session.add(new_payment)
+        # db.session.commit()
+
+        # Respond with success
         return jsonify({"message": "Payment successful", "transaction_id": transaction_id}), 200
     else:
+        # Payment failed or was cancelled
         return jsonify({"error": "Payment failed", "description": result_desc}), 400
+
 
 
    
