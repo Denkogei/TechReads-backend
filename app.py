@@ -172,9 +172,15 @@ def mpesa_callback():
             print("Missing transaction_id")
             return jsonify({"error": "Missing payment details"}), 400
 
+        # Ensure amount is a valid integer, assuming the model expects an integer
+        try:
+            amount = int(float(amount))
+        except ValueError:
+            return jsonify({"error": "Invalid amount"}), 400
+
         # Create a new Order in the database
         new_order = Order(
-            user_id=1,  # Replace with the appropriate user_id if needed
+            user_id=1,  # Use a valid user_id that exists in your Users table
             status="Paid",
             total_price=amount,
             datetime=datetime.now()
@@ -186,9 +192,10 @@ def mpesa_callback():
         new_payment = Payment(
             order_id=new_order.id,
             payment_method="Mpesa",
+            amount=amount,  # Added to match your Payment model
             status="Completed",
             transaction_id=transaction_id,
-            created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            created_at=datetime.now()
         )
         db.session.add(new_payment)
         db.session.commit()
@@ -198,6 +205,7 @@ def mpesa_callback():
 
     # If the transaction was not successful
     return jsonify({"error": "Payment failed", "description": result_desc}), 400
+
 
 
 
