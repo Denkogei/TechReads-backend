@@ -58,63 +58,77 @@ MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
 MPESA_BASE_URL = os.getenv("MPESA_BASE_URL", "https://sandbox.safaricom.co.ke")  
 CALLBACK_URL = os.getenv("CALLBACK_URL")
 
-
+#testing
 def get_mpesa_access_token():
-    url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
-    response = requests.get(url, auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET))
-    response_json = response.json()
-    return response_json.get("access_token")
+    try:
+        url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+        print("Requesting access token from:", url)
+        response = requests.get(url, auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET))
+        print("Auth response:", response.status_code, response.text)
+        response.raise_for_status()
+        data = response.json()
+        access_token = data.get("access_token")
+        if not access_token:
+            raise Exception("No access token in response")
+        print("Access token:", access_token)
+        return access_token
+    except requests.RequestException as e:
+        print(f"Auth error: {str(e)}")
+        raise Exception(f"Failed to get access token: {str(e)}")
+    except ValueError:
+        print("Auth response not JSON:", response.text)
+        raise Exception("Invalid auth response format")
 
 
+# @app.route('/mpesa/stkpush', methods=['POST'])
+# def mpesa_stkpush():
+#     try:
+#         print("Received STK Push request")
+#         data = request.get_json()
+#         if not data:
+#             print("No JSON data")
+#             return jsonify({"error": "No JSON data provided"}), 400
 
+#         phone_number = data.get("phone_number")
+#         amount = data.get("amount")
+#         order_id = data.get("order_id")
+#         print(f"Input: phone={phone_number}, amount={amount}, order_id={order_id}")
 
-@app.route('/mpesa/stkpush', methods=['POST'])
+#         if not all([phone_number, amount, order_id]):
+#             print("Missing fields")
+#             return jsonify({"error": "Missing required fields"}), 400
 
+#         access_token = get_mpesa_access_token()
+#         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+#         password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
+#         print("Generated timestamp and password")
 
-def mpesa_stkpush():
-    data = request.get_json()
-    phone_number = data.get("phone_number")  
-    amount = data.get("amount")
-    order_id = data.get("order_id")
+#         payload = {
+#             "BusinessShortCode": MPESA_SHORTCODE,
+#             "Password": password,
+#             "Timestamp": timestamp,
+#             "TransactionType": "CustomerPayBillOnline",
+#             "Amount": str(amount),  # Ensure string
+#             "PartyA": phone_number,
+#             "PartyB": MPESA_SHORTCODE,
+#             "PhoneNumber": phone_number,
+#             "CallBackURL": CALLBACK_URL,
+#             "AccountReference": str(order_id),
+#             "TransactionDesc": "Payment for TechReads Order"
+#         }
+#         print("Payload:", payload)
 
+#         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+#         response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
+#         print("STK response:", response.status_code, response.text)
+#         response.raise_for_status()
 
+#         return jsonify({"message": "Payment request sent", "response": response.json()})
 
+#     except Exception as e:
+#         print(f"STK Push error: {str(e)}")
+#         return jsonify({"error": str(e)}), 500
 
-    if not phone_number or not amount or not order_id:
-        return jsonify({"error": "Missing required fields"}), 400
-
-
-
-
-    access_token = get_mpesa_access_token()
-   
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
-
-
-
-
-    payload = {
-        "BusinessShortCode": MPESA_SHORTCODE,
-        "Password": password,
-        "Timestamp": timestamp,
-        "TransactionType": "CustomerPayBillOnline",
-        "Amount": amount,
-        "PartyA": phone_number,
-        "PartyB": MPESA_SHORTCODE,
-        "PhoneNumber": phone_number,
-        "CallBackURL": CALLBACK_URL,
-        "AccountReference": str(order_id),
-        "TransactionDesc": "Payment for TechReads Order"
-    }
-
-
-
-
-    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-    response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
-   
-    return response.json()
 
 
 @app.route('/mpesa/callback', methods=['POST'])
