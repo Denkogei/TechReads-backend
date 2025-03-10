@@ -20,27 +20,28 @@ import os
 load_dotenv()
 app = Flask(__name__)
 
+
 # Database configuration moved here
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = "your_secret_key"
 
-
-
 db.init_app(app)
 CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5173", "http://localhost:5173"]}})
-
-
 
 
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 SENDGRID_SENDER_EMAIL = os.getenv("SENDGRID_SENDER_EMAIL")
 
+
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
+
 api = Api(app)
+
+
 
 
 cloudinary.config(
@@ -50,146 +51,162 @@ cloudinary.config(
 )
 
 
+
+
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
+MPESA_BASE_URL = os.getenv("MPESA_BASE_URL", "https://sandbox.safaricom.co.ke")  
+CALLBACK_URL = os.getenv("CALLBACK_URL")
+
+
 def get_mpesa_access_token():
-    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-    
-    consumer_key = "DGnrLBUtUoke80CT6aFwD9hmVmTpT6ArW0vVxAmbekm2ApGn"
-    consumer_secret = "88JoyDdIwn41HDixfeZqoQL3yMl9FGv6m5FtOZAqtFqWNE5XuA9d3GeaAP8h3erK"
-    
-    auth_string = f"{consumer_key}:{consumer_secret}"
+    url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+    auth_string = f"{MPESA_CONSUMER_KEY}:{MPESA_CONSUMER_SECRET}"
     auth_encoded = base64.b64encode(auth_string.encode()).decode()
+
 
     headers = {
         "Authorization": f"Basic {auth_encoded}",
         "Content-Type": "application/json"
     }
 
+
     response = requests.get(url, headers=headers)
-    response_json = response.json()
-    return response_json.get("access_token")
+
+
+   
+    if response.status_code != 200:
+        print(f"Failed to get access token: {response.status_code} - {response.text}")
+        return None
+
+
+    try:
+        response_json = response.json()
+        access_token = response_json.get("access_token")
+
+
+        if not access_token:
+            print(f"Access token missing in response: {response_json}")
+        return access_token
+
+
+    except ValueError:
+        print(f"Invalid JSON response: {response.text}")
+        return None
+
 
 
 @app.route('/mpesa/stkpush', methods=['POST'])
 def mpesa_stkpush():
-    
-    MPESA_CONSUMER_KEY = "DGnrLBUtUoke80CT6aFwD9hmVmTpT6ArW0vVxAmbekm2ApGn"
-    MPESA_CONSUMER_SECRET = "88JoyDdIwn41HDixfeZqoQL3yMl9FGv6m5FtOZAqtFqWNE5XuA9d3GeaAP8h3erK"
-    MPESA_SHORTCODE = "174379"
-    MPESA_PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
-    MPESA_BASE_URL = "https://sandbox.safaricom.co.ke"
-    CALLBACK_URL = "https://techreads-backend.onrender.com/mpesa/callback"
+    try:
+        print("Received STK Push request")
+        data = request.get_json()
+        if not data:
+            print("No JSON data")
+            return jsonify({"error": "No JSON data provided"}), 400
 
-    
-    data = request.get_json()
-    phone_number = data.get("phone_number")
-    amount = data.get("amount")
-    order_id = data.get("order_id")
 
-    
-    if not phone_number or not amount or not order_id:
-         return jsonify({"error": "Missing required fields"}), 400
+        phone_number = data.get("phone_number")
+        amount = data.get("amount")
+        order_id = data.get("order_id")
+        print(f"Input: phone={phone_number}, amount={amount}, order_id={order_id}")
 
-    
-    auth_url = f"{MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
-    auth_response = requests.get(auth_url, auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET))
-    access_token = auth_response.json().get("access_token")
 
-    if not access_token:
-        return jsonify({"error": "Failed to get access token"}), 400
+        if not all([phone_number, amount, order_id]):
+            print("Missing fields")
+            return jsonify({"error": "Missing required fields"}), 400
 
-    
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
 
-    
-    payload = {
-        "BusinessShortCode": MPESA_SHORTCODE,
-        "Password": password,
-        "Timestamp": timestamp,
-        "TransactionType": "CustomerPayBillOnline",
-        "Amount": amount,
-        "PartyA": phone_number,
-        "PartyB": MPESA_SHORTCODE,
-        "PhoneNumber": phone_number,
-        "CallBackURL": CALLBACK_URL,
-        "AccountReference": str(order_id),
-        "TransactionDesc": "Payment for TechReads Order"
-    }
+        access_token = get_mpesa_access_token()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        password = base64.b64encode(f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()).decode()
+        print("Generated timestamp and password")
 
-    
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
 
-    
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return jsonify({"error": f"{response.status_code} {response.reason}", "details": response.text}), 400
+        payload = {
+            "BusinessShortCode": MPESA_SHORTCODE,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": str(amount),  
+            "PartyA": phone_number,
+            "PartyB": MPESA_SHORTCODE,
+            "PhoneNumber": phone_number,
+            "CallBackURL": CALLBACK_URL,
+            "AccountReference": str(order_id),
+            "TransactionDesc": "Payment for TechReads Order"
+        }
+        print("Payload:", payload)
 
+
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        response = requests.post(f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest", json=payload, headers=headers)
+        print("STK response:", response.status_code, response.text)
+        response.raise_for_status()
+
+
+        return jsonify({"message": "Payment request sent", "response": response.json()})
+
+
+    except Exception as e:
+        print(f"STK Push error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/mpesa/callback', methods=['POST'])
 def mpesa_callback():
     data = request.get_json()
-    print("Mpesa Callback Data:", data)
+    print("Mpesa Callback Data:", data)  
+
+
+
 
     if not data:
         return jsonify({"error": "Invalid callback data"}), 400
+
+
+
 
     stk_callback = data.get("Body", {}).get("stkCallback", {})
     result_code = stk_callback.get("ResultCode")
     result_desc = stk_callback.get("ResultDesc")
     metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
 
-    print("STK Callback Parsed:", stk_callback)
-    print("Metadata:", metadata)
 
-    
+
+
+    print("STK Callback Parsed:", stk_callback)  
+    print("Metadata:", metadata)  
+
+
+
+
     if result_code == 0:
-        
         payment_details = {item["Name"]: item.get("Value") for item in metadata}
+
+
+
+
+        order_id = payment_details.get("AccountReference")
         transaction_id = payment_details.get("MpesaReceiptNumber")
         amount = payment_details.get("Amount")
 
-        if not transaction_id:
-            print("Missing transaction_id")
+
+
+
+        if not order_id or not transaction_id:
+            print("Missing order_id or transaction_id")  
             return jsonify({"error": "Missing payment details"}), 400
 
-        
-        try:
-            amount = int(float(amount))
-        except ValueError:
-            return jsonify({"error": "Invalid amount"}), 400
 
-        
-        new_order = Order(
-            user_id=1,  
-            status="Paid",
-            total_price=amount,
-            datetime=datetime.now()
-        )
-        db.session.add(new_order)
-        db.session.commit()
 
-        
-        new_payment = Payment(
-            order_id=new_order.id,
-            payment_method="Mpesa",
-            amount=amount,  
-            status="Completed",
-            transaction_id=transaction_id,
-            created_at=datetime.now()
-        )
-        db.session.add(new_payment)
-        db.session.commit()
 
-        
         return jsonify({"message": "Payment successful", "transaction_id": transaction_id}), 200
+    else:
+        return jsonify({"error": "Payment failed", "description": result_desc}), 400
 
-    return jsonify({"error": "Payment failed", "description": result_desc}), 400
 
 
 def token_required(f):
@@ -210,9 +227,12 @@ def token_required(f):
     return decorated_function
 
 
+
 @app.route('/')
 def home():
     return jsonify({"message": "Welcome to TechReads API!"})
+
+
 
 
 @app.route('/signup', methods=['POST'])
@@ -222,6 +242,8 @@ def signup():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
+
+
 
 
     if User.query.filter((User.username == username) | (User.email == email)).first():
@@ -234,7 +256,6 @@ def signup():
 
 
 
-
     return jsonify({'message': 'User created successfully'}), 201
 
 
@@ -244,21 +265,27 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
+
     if not email or not password:
         return jsonify({'error': 'Email and password are required'}), 400
 
+
     user = User.query.filter_by(email=email).first()
+
 
     if not user:
         return jsonify({'error': 'Invalid credentials'}), 401
 
-    
+
+   
     print(f"Stored password hash: {user.password}")
+
 
     try:
         if bcrypt.check_password_hash(user.password, password):
             access_token = create_access_token(identity=user.id, expires_delta=False)
             refresh_token = create_refresh_token(identity=user.id)
+
 
             return jsonify({
                 'access_token': access_token,
@@ -272,7 +299,10 @@ def login():
     except ValueError:
         return jsonify({'error': 'Invalid password format. Please reset your password.'}), 500
 
+
     return jsonify({'error': 'Invalid credentials'}), 401
+
+
 
 
 @app.route('/logout', methods=['POST'])
@@ -280,6 +310,8 @@ def login():
 def logout():
     jti = get_jwt().get("jti")
     return jsonify({'message': 'Logged out successfully', 'jti': jti}), 200
+
+
 
 
 @app.route('/profile', methods=['GET'])
@@ -298,11 +330,15 @@ def profile():
     })
 
 
+
+
 @app.route('/books', methods=['GET'])
 @jwt_required()
 def get_books():
     books = Book.query.all()
     return jsonify([book.to_dict() for book in books])
+
+
 
 
 @app.route('/books/<int:id>', methods=['GET'])
@@ -312,12 +348,14 @@ def get_book_by_id(id):
     return jsonify(book.to_dict())  
 
 
+
+
 @app.route('/books', methods=['POST'])
 @jwt_required()
 def add_book():
     data = request.get_json()
    
-    
+   
     required_fields = ['title', 'author', 'price', 'stock', 'category_id', 'image_url']
     missing_fields = [field for field in required_fields if field not in data]
     if missing_fields:
@@ -327,12 +365,16 @@ def add_book():
         }), 400
 
 
+
+
     try:
         if 'cloudinary.com' not in data['image_url']:
             return jsonify({
                 "error": "Invalid image URL format",
                 "details": "Must be a valid Cloudinary URL"
             }), 400
+
+
 
 
         numeric_fields = {
@@ -403,6 +445,8 @@ def edit_book(book_id):
     data = request.get_json()
 
 
+
+
     book.title = data.get('title', book.title)
     book.author = data.get('author', book.author)
     book.description = data.get('description', book.description)
@@ -425,12 +469,10 @@ def delete_book(book_id):
     if not book:
         return jsonify({"error": "Book not found"}), 404
 
-
     OrderItem.query.filter_by(book_id=book_id).delete()
    
     db.session.delete(book)
     db.session.commit()
-
 
     return jsonify({"message": "Book deleted successfully"}), 200
 
@@ -439,7 +481,6 @@ def delete_book(book_id):
 @jwt_required()
 def add_to_wishlist(book_id):
     user_id = get_jwt_identity()
-
 
     book = Book.query.get(book_id)
     if not book:
@@ -496,9 +537,12 @@ def add_to_cart(book_id):
         user_id = get_jwt_identity()
 
 
+
+
         book = Book.query.get(book_id)
         if not book:
             return jsonify({'error': 'Book not found'}), 404
+
 
         quantity = request.json.get('quantity', 1)  
 
@@ -509,7 +553,6 @@ def add_to_cart(book_id):
 
 
         cart_item = CartItem(user_id=user_id, book_id=book_id, quantity=quantity)
-
 
         db.session.add(cart_item)
         db.session.commit()
@@ -525,8 +568,6 @@ def get_cart(user_id):
     return jsonify([item.to_dict() for item in cart_items]), 200
 
 
-
-
 @app.route('/cart/<int:item_id>', methods=['DELETE'])
 @jwt_required()
 def delete_cart_item(item_id):
@@ -540,7 +581,6 @@ def delete_cart_item(item_id):
     db.session.delete(cart_item)
     db.session.commit()
 
-
     return jsonify({'message': 'Cart item deleted successfully'}), 200
 
 
@@ -550,13 +590,10 @@ def update_cart_item(book_id):
     user_id = get_jwt_identity()
     data = request.get_json()
 
-
     cart_item = CartItem.query.filter_by(user_id=user_id, book_id=book_id).first()
-
 
     if not cart_item:
         return jsonify({"error": 'Cart item not found'}), 404
-
 
     if "quantity" in data:
         new_quantity = data['"quantity']
@@ -568,8 +605,8 @@ def update_cart_item(book_id):
 
     db.session.commit()
 
-
     return jsonify({"message": "Cart updated successfully", "cart_item": cart_item.to_dict()}), 200
+
 
 @app.route('/categories', methods=['POST'])
 @jwt_required()
@@ -592,6 +629,7 @@ def add_category():
 
     return jsonify({'message': 'Category added successfully'}), 201
 
+
 @app.route('/categories', methods=['GET'])
 @jwt_required()
 def get_categories():
@@ -606,10 +644,8 @@ def get_orders():
     orders = Order.query.order_by(Order.datetime.desc()).all()
     print("Orders fetched from DB:", orders)  
 
-
     if not orders:
         print("No orders found in the database.")  
-
 
     return jsonify([order.to_dict() for order in orders]), 200
 
@@ -629,20 +665,26 @@ def delete_orders(id):
     order = Order.query.get(id)
 
 
+
+
     if not order:
         return jsonify({'error': 'Order not found'}), 404
+
 
     db.session.delete(order)
     db.session.commit()
 
+
     return jsonify({'message': 'Order deleted successfully'})
    
+
 
 @app.route('/orders', methods=['POST'])
 @jwt_required()
 def place_order():
     user_id = get_jwt_identity()
     data = request.get_json()
+
 
     new_order = Order(
         user_id=user_id,
@@ -653,14 +695,18 @@ def place_order():
     db.session.add(new_order)
     db.session.commit()
 
+
     items = data.get('items', [])
     if not items:
         return jsonify({'error': 'No items provided'}), 400
 
 
+
+
     for item in items:
         if 'book_id' not in item or 'quantity' not in item or 'price' not in item:
             return jsonify({'error': 'Invalid item data'}), 400
+
 
 
     for item in items:
@@ -672,7 +718,6 @@ def place_order():
         )
         db.session.add(order_item)
 
-
     db.session.commit()
     return jsonify({'message': 'Order placed successfully'}), 201
 
@@ -683,27 +728,35 @@ def update_order(order_id):
         current_user = get_jwt_identity()
         print(f"User {current_user} is updating order {order_id}")
 
+
         order = Order.query.get(order_id)
         if not order:
             return jsonify({"error": "Order not found"}), 404
 
+
         data = request.get_json()
         new_status = data.get("status")
 
+
         if not new_status:
             return jsonify({"error": "Missing status field"}), 400
+
 
         old_status = order.status
         order.status = new_status
         db.session.commit()
 
+
         if old_status != new_status:
             send_order_update_email(order.user.email, order_id, new_status)
 
+
         return jsonify({"message": "Order status updated", "order": {"id": order.id, "status": order.status}}), 200
+
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 def send_order_update_email(email, order_id, new_status):
     try:
@@ -718,7 +771,7 @@ def send_order_update_email(email, order_id, new_status):
         print(f"Email sent to {email}, status: {response.status_code}")
     except Exception as e:
         print(f"Error sending email: {e}")
-    
+   
 
 @app.route('/payments', methods=['POST'])
 @jwt_required()
@@ -727,6 +780,7 @@ def make_payment():
     order_id = data.get('order_id')
     payment_method = data.get('payment_method')
     transaction_id = data.get('transaction_id')
+
 
     new_payment = Payment(
         order_id=order_id,
@@ -738,15 +792,9 @@ def make_payment():
     db.session.add(new_payment)
     db.session.commit()
 
+
     return jsonify({'message': 'Payment done successfully'}), 201
-    
-@app.route('/payments', methods=['GET'])
-@jwt_required()
-def get_payments():
-    payment_list = Payment.query.order_by(Payment.created_at.desc()).all()  
-    if payment_list:
-        return jsonify([payment.to_dict() for payment in payment_list]), 200
-    return jsonify({'error': 'No payments found'}), 404
+
 
 
 @app.route('/refresh', methods=['POST'])
@@ -757,7 +805,11 @@ def refresh():
     return jsonify({'access_token': new_access_token}), 200
 
 
+
 if __name__ == "__main__":
     app.run(debug=True, port=5555)
+
+
+
 
 

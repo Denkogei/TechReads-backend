@@ -30,7 +30,7 @@ This app lets you find various books that cover many topics in the technological
 - Access to the internet.
 - A web browser.
 
-Live link for the frontend: `https://techreadskenya.netlify.app/`
+Live link for the frontend: `https://techreadsafrica.netlify.app/`
 Live link for the backend:  `https://techreads-backend.onrender.com/`
 
 ## Local deployment
