@@ -34,6 +34,8 @@ Live link for the frontend: (https://techreadsafrica.netlify.app/)
 
 Live link for the backend:  (https://techreads-backend.onrender.com/)
 
+Frontend Repository link:  (https://github.com/Denkogei/TechReads-frontend/)
+
 ## Local deployment
 To run the project locally, one will need:
 - A basic understanding of how React and Flask work.
